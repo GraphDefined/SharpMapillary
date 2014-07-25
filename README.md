@@ -4,10 +4,10 @@ SharpMapillary
 SharpMapillary is a little toolbox for everyone who creates photos for [Mapillary](http://www.mapillary.com) using a sports camera like a [GoPro](http://www.gopro.com) and a software like [RunKeeper](http://runkeeper.com) for recording the GPS tracks. The toolbox currently provides the following features:
 
 * Load GPS coordinates and their timestamps from GPX files
-* Load EXIF infos from JPEG images
-* Sync GPS coordinates and images by their timestamp (including a time offset)
-* Interpolate missing GPS coordinates (NearestMatch, LinearInterpolation)
-* Add or change EXIF information (e.g. Artist, UserComment, WindowsKeywords, Copyright, ...)
+* Load EXIF metadata from JPEG images
+* Sync GPS coordinates and images by their shared timestamps, including an optional time offset
+* Interpolate missing GPS coordinates (NearestMatch, LinearInterpolation, ...)
+* Add or change EXIF metadata (e.g. Artist, UserComment, WindowsKeywords, Copyright, ...)
 * Resize the images
 * Upload to Mapillary (not yet!)
 
