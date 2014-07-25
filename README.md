@@ -10,6 +10,8 @@ SharpMapillary is a little toolbox for everyone who creates photos for [Mapillar
 * Add or change EXIF metadata (e.g. Artist, UserComment, WindowsKeywords, Copyright, ...)
 * Resize the images
 * Upload to Mapillary (not yet!)
+* Create a proper GeoJSON/KML representation of the data set (not yet!)
+* Use a little embedded HTTP server to verify and fine tune the data set
 
 #### Usage
 
