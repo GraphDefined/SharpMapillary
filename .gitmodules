@@ -1,0 +1,3 @@
+[submodule "libs/ExifTools"]
+	path = libs/ExifTools
+	url = git@github.com:ahzf/ExifLibrary.git
