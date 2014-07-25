@@ -35,40 +35,6 @@ namespace org.GraphDefined.SharpMapillary
         public static void Main(String[] Arguments)
         {
 
-            // Look North
-            //var GPSEarly_Latitude  = 51.467696956223385;    // N|S
-            //var GPSLate_Latitude   = 52.467696956223385;
-            //var GPSEarly_Longitude = 11.87509765625;        // W|O
-            //var GPSLate_Longitude  = 11.87509765625;
-
-            // Look East
-            var GPSEarly_Latitude  = 51.467696956223385;    // N|S
-            var GPSLate_Latitude   = 51.467696956223385;
-            var GPSEarly_Longitude = 11.87509765625;        // W|O
-            var GPSLate_Longitude  = 12.97509765625;
-
-            // Look South
-            //var GPSEarly_Latitude  = 52.467696956223385;    // N|S
-            //var GPSLate_Latitude   = 51.467696956223385;
-            //var GPSEarly_Longitude = 11.87509765625;        // W|O
-            //var GPSLate_Longitude  = 11.87509765625;
-
-            // Look West
-            //var GPSEarly_Latitude  = 51.467696956223385;    // N|S
-            //var GPSLate_Latitude   = 51.467696956223385;
-            //var GPSEarly_Longitude = 11.97509765625;        // W|O
-            //var GPSLate_Longitude  = 11.47509765625;
-
-            var dy              = GPSEarly_Latitude - GPSLate_Latitude;
-            var dx              = Math.Cos(Math.PI / 180 * GPSLate_Latitude) * (GPSLate_Longitude - GPSEarly_Longitude);
-            var Image_Direction = 90 + Math.Atan2(dy, dx) * 180 / Math.PI;
-
-            if (Image_Direction < 0)
-                Image_Direction += 360;
-
-            //ToDo: Ensure, that there are always enough GPS trackpoints
-            //      before the first and after the last image!
-
             SharpMapillary.Start(@"E:\_Projekte\Mapillary\Jena-West1").//Ziegenhain2").
                                  LoadGPXs().
                                  LoadJPGs().//TimeOffset: TimeSpan.FromSeconds(51)).

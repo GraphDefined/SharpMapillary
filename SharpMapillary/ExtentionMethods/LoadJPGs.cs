@@ -32,6 +32,8 @@ namespace org.GraphDefined.SharpMapillary
     public static partial class SharpMapillary
     {
 
+        //ToDo: TimeOffset -> Int16 to support values < 0!
+
         #region LoadJPGs(this Path, TimeOffset = null)
 
         public static MapillaryInfo LoadJPGs(this String  Path,
