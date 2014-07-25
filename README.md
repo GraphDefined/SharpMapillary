@@ -13,6 +13,9 @@ SharpMapillary is a little toolbox for everyone who creates photos for [Mapillar
 
 #### Usage
 
+SharpMapillary is implemented as a set of pipes. Any enumeration of file system paths can be used to start the pipeline and you can intercept the pipeline everywhere to add your customizations.
+
+
     SharpMapillary.Start(@"E:\_Projekte\Mapillary\Jena-West1").
                          LoadGPXs().
                          LoadJPGs().//TimeOffset: TimeSpan.FromSeconds(51)).
