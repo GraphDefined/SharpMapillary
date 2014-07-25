@@ -7,7 +7,7 @@ SharpMapillary is a little toolbox for everyone who creates photos for [Mapillar
 * Load EXIF infos from JPEG images
 * Sync GPS coordinates and images by their timestamp (including a time offset)
 * Interpolate missing GPS coordinates (NearestMatch, LinearInterpolation)
-* Add or change EXIF informnation (e.g. Artist, UserComment, WindowsKeywords, Copyright, ...)
+* Add or change EXIF information (e.g. Artist, UserComment, WindowsKeywords, Copyright, ...)
 * Resize the images
 * Upload to Mapillary (not yet!)
 
