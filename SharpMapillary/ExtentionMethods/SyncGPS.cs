@@ -1,6 +1,6 @@
 ﻿/*
  * Copyright (c) 2014 Achim 'ahzf' Friedland <achim@graphdefined.org>
- * This file is part of SharpMapillary <http://www.github.com/ahzf/SharpMapillary>
+ * This file is part of SharpMapillary <http://www.github.com/GraphDefined/SharpMapillary>
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -32,9 +32,9 @@ namespace org.GraphDefined.SharpMapillary
 
         #region SyncGPS(MapillaryInfos, GPSInterpolation = GPSInterpolation.LinearInterpolation, DirectionOffset = 0.0)
 
-        public static IEnumerable<MapillaryInfo> SyncGPS(this IEnumerable<MapillaryInfo>  MapillaryInfos,
-                                                         GPSInterpolation                 GPSInterpolation = GPSInterpolation.LinearInterpolation,
-                                                         Double                           DirectionOffset  = 0.0)
+        public static IEnumerable<SharpMapillaryInfo> SyncGPS(this IEnumerable<SharpMapillaryInfo>  MapillaryInfos,
+                                                              GPSInterpolation                      GPSInterpolation = GPSInterpolation.LinearInterpolation,
+                                                              Double                                DirectionOffset  = 0.0)
         {
             return MapillaryInfos.Select(MapillaryInfo => SyncGPS(ref MapillaryInfo, GPSInterpolation, DirectionOffset));
         }
@@ -43,9 +43,9 @@ namespace org.GraphDefined.SharpMapillary
 
         #region SyncGPS(this MapillaryInfo, GPSInterpolation = GPSInterpolation.LinearInterpolation, DirectionOffset = 0.0)
 
-        public static MapillaryInfo SyncGPS(this MapillaryInfo  MapillaryInfo,
-                                            GPSInterpolation    GPSInterpolation  = GPSInterpolation.LinearInterpolation,
-                                            Double              DirectionOffset   = 0.0)
+        public static SharpMapillaryInfo SyncGPS(this SharpMapillaryInfo  MapillaryInfo,
+                                                 GPSInterpolation         GPSInterpolation  = GPSInterpolation.LinearInterpolation,
+                                                 Double                   DirectionOffset   = 0.0)
         {
             return SyncGPS(ref MapillaryInfo, GPSInterpolation, DirectionOffset);
         }
@@ -54,18 +54,18 @@ namespace org.GraphDefined.SharpMapillary
 
         #region SyncGPS(ref MapillaryInfo, GPSInterpolation = GPSInterpolation.LinearInterpolation, DirectionOffset = 0.0)
 
-        public static MapillaryInfo SyncGPS(ref MapillaryInfo  MapillaryInfo,
-                                            GPSInterpolation   GPSInterpolation  = GPSInterpolation.LinearInterpolation,
-                                            Double             DirectionOffset   = 0.0)
+        public static SharpMapillaryInfo SyncGPS(ref SharpMapillaryInfo  MapillaryInfo,
+                                                 GPSInterpolation        GPSInterpolation  = GPSInterpolation.LinearInterpolation,
+                                                 Double                  DirectionOffset   = 0.0)
         {
 
             #region Data
 
             //var Ratio               = Math.Round((Double) GPXLookup.Data.Count() / (Double) NumberOfImages, 2);
 
-            MapillaryImageInfo GPSEarly;
-            MapillaryImageInfo GPSLate;
-            MapillaryImageInfo NextGPSTrackpoint;
+            GPSInfo GPSEarly;
+            GPSInfo GPSLate;
+            GPSInfo NextGPSTrackpoint;
 
             var GPSEarlyTimestamp           = DateTime.MinValue;
             var GPSLateTimestamp            = DateTime.MinValue;
@@ -84,12 +84,14 @@ namespace org.GraphDefined.SharpMapillary
             foreach (var ImageInfo in MapillaryInfo.Data.Values)
             {
 
-                if (ImageInfo.Image_Timestamp.HasValue)
+                // == is an image!
+                if (ImageInfo.FileName != null &&
+                    ImageInfo.Timestamp.HasValue)
                 {
 
-                    // ToDo: Currently inefficient!
-                    GPSEarly                  = MapillaryInfo.Data.Values.Where(v => ImageInfo.Image_Timestamp >= v.GPS_Timestamp).LastOrDefault();
-                    GPSLate                   = MapillaryInfo.Data.Values.Where(v => ImageInfo.Image_Timestamp <= v.GPS_Timestamp).FirstOrDefault();
+                    // ToDo: Currently a bit inefficient!
+                    GPSEarly                  = MapillaryInfo.GPSData.Values.Where(v => ImageInfo.Timestamp >= v.Timestamp).LastOrDefault();
+                    GPSLate                   = MapillaryInfo.GPSData.Values.Where(v => ImageInfo.Timestamp <= v.Timestamp).FirstOrDefault();
                     //var GPXIndex               = GPXList.BinarySearch(timestamp);
                     //LateTimestamp              = (GPXIndex >= 0) ? GPXArray[GPXIndex] : GPXArray[-GPXIndex - 1]; // Returns the next timestamp if no exact match was found!
 
@@ -98,19 +100,15 @@ namespace org.GraphDefined.SharpMapillary
                     if (GPSEarly != null && GPSLate != null)
                     {
 
-                        GPSEarlyTimestamp                   = GPSEarly != null ? GPSEarly.GPS_Timestamp.Value : DateTime.MinValue;
-                        GPSLateTimestamp                    = GPSLate  != null ? GPSLate. GPS_Timestamp.Value : DateTime.MaxValue;
+                        GPSEarlyTimestamp                   = GPSEarly != null ? GPSEarly.Timestamp.Value : DateTime.MinValue;
+                        GPSLateTimestamp                    = GPSLate  != null ? GPSLate. Timestamp.Value : DateTime.MaxValue;
 
-                        if (GPSEarly == null || GPSLate == null)
-                        {
-                        }
-
-                        EarlyDiff                           = (ImageInfo.Image_Timestamp.Value - GPSEarlyTimestamp)              .TotalSeconds;
-                        LateDiff                            = (GPSLateTimestamp                - ImageInfo.Image_Timestamp.Value).TotalSeconds;
-
-                        #region Update DiffHistogram
+                        EarlyDiff                           = (ImageInfo.Timestamp.Value - GPSEarlyTimestamp)              .TotalSeconds;
+                        LateDiff                            = (GPSLateTimestamp          - ImageInfo.Timestamp.Value).TotalSeconds;
 
                         ImageInfo.Image2GPS_TimeDifference  = (EarlyDiff < LateDiff) ? -EarlyDiff : LateDiff;
+
+                        #region Update DiffHistogram
 
                         if (!MapillaryInfo.DiffHistogram.ContainsKey(ImageInfo.Image2GPS_TimeDifference))
                             MapillaryInfo.DiffHistogram.Add(ImageInfo.Image2GPS_TimeDifference, 1);
@@ -127,21 +125,21 @@ namespace org.GraphDefined.SharpMapillary
 
                             #region Set Lat/Lng/Alt
 
-                            ImageInfo.Image_Latitude    = ImageInfo.GPS_Latitude;
-                            ImageInfo.Image_Longitude   = ImageInfo.GPS_Longitude;
-                            ImageInfo.Image_Altitude    = ImageInfo.GPS_Altitude;
+                            ImageInfo.Latitude    = GPSEarly.Latitude;
+                            ImageInfo.Longitude   = GPSEarly.Longitude;
+                            ImageInfo.Altitude    = GPSEarly.Altitude;
 
                             #endregion
 
                             #region Calculate image direction
 
-                            // ToDo: Currently inefficient!
-                            NextGPSTrackpoint       = MapillaryInfo.Data.Values.Where(v => ImageInfo.Image_Timestamp < v.GPS_Timestamp).FirstOrDefault();
+                            // ToDo: Currently a bit inefficient!
+                            NextGPSTrackpoint       = MapillaryInfo.GPSData.Values.Where(v => ImageInfo.Timestamp < v.Timestamp).FirstOrDefault();
 
                             if (NextGPSTrackpoint  != null)
                             {
-                                dy                      = GPSEarly.GPS_Latitude - NextGPSTrackpoint.GPS_Latitude;
-                                dx                      = Math.Cos(Math.PI / 180 * NextGPSTrackpoint.GPS_Latitude) * (NextGPSTrackpoint.GPS_Longitude - GPSEarly.GPS_Longitude);
+                                dy                      = GPSEarly.Latitude - NextGPSTrackpoint.Latitude;
+                                dx                      = Math.Cos(Math.PI / 180 * NextGPSTrackpoint.Latitude) * (NextGPSTrackpoint.Longitude - GPSEarly.Longitude);
                             }
 
                             #endregion
@@ -159,17 +157,17 @@ namespace org.GraphDefined.SharpMapillary
                             {
 
                                 case GPSInterpolation.NearestMatch:
-                                    ImageInfo.Image_Latitude    = (EarlyDiff < LateDiff) ? GPSEarly.GPS_Latitude  : GPSLate.GPS_Latitude;
-                                    ImageInfo.Image_Longitude   = (EarlyDiff < LateDiff) ? GPSEarly.GPS_Longitude : GPSLate.GPS_Longitude;
-                                    ImageInfo.Image_Altitude    = (EarlyDiff < LateDiff) ? GPSEarly.GPS_Altitude  : GPSLate.GPS_Altitude;
+                                    ImageInfo.Latitude         = (EarlyDiff < LateDiff) ? GPSEarly.Latitude  : GPSLate.Latitude;
+                                    ImageInfo.Longitude        = (EarlyDiff < LateDiff) ? GPSEarly.Longitude : GPSLate.Longitude;
+                                    ImageInfo.Altitude         = (EarlyDiff < LateDiff) ? GPSEarly.Altitude  : GPSLate.Altitude;
                                     break;
 
                                 case GPSInterpolation.LinearInterpolation:
-                                    GPSTimeRange                = (GPSLateTimestamp - GPSEarlyTimestamp).TotalSeconds;
-                                    GPSEarly2Image_TimeOffset   = (ImageInfo.Image_Timestamp.Value - GPSEarlyTimestamp).TotalSeconds;
-                                    ImageInfo.Image_Latitude    = GPSEarly.GPS_Latitude  - (GPSEarly.GPS_Latitude  - GPSLate.GPS_Latitude)  / GPSTimeRange * GPSEarly2Image_TimeOffset;
-                                    ImageInfo.Image_Longitude   = GPSEarly.GPS_Longitude - (GPSEarly.GPS_Longitude - GPSLate.GPS_Longitude) / GPSTimeRange * GPSEarly2Image_TimeOffset;
-                                    ImageInfo.Image_Altitude    = GPSEarly.GPS_Altitude  - (GPSEarly.GPS_Altitude  - GPSLate.GPS_Altitude)  / GPSTimeRange * GPSEarly2Image_TimeOffset;
+                                    GPSTimeRange               = (GPSLateTimestamp - GPSEarlyTimestamp).TotalSeconds;
+                                    GPSEarly2Image_TimeOffset  = (ImageInfo.Timestamp.Value - GPSEarlyTimestamp).TotalSeconds;
+                                    ImageInfo.Latitude         = GPSEarly.Latitude  - (GPSEarly.Latitude  - GPSLate.Latitude)  / GPSTimeRange * GPSEarly2Image_TimeOffset;
+                                    ImageInfo.Longitude        = GPSEarly.Longitude - (GPSEarly.Longitude - GPSLate.Longitude) / GPSTimeRange * GPSEarly2Image_TimeOffset;
+                                    ImageInfo.Altitude         = GPSEarly.Altitude  - (GPSEarly.Altitude  - GPSLate.Altitude)  / GPSTimeRange * GPSEarly2Image_TimeOffset;
                                     break;
 
                             }
@@ -178,8 +176,8 @@ namespace org.GraphDefined.SharpMapillary
 
                             #region Calculate image direction
 
-                            dy                         = GPSEarly.GPS_Latitude - GPSLate.GPS_Latitude;
-                            dx                         = Math.Cos(Math.PI / 180 * GPSLate.GPS_Latitude) * (GPSLate.GPS_Longitude - GPSEarly.GPS_Longitude);
+                            dy                         = GPSEarly.Latitude - GPSLate.Latitude;
+                            dx                         = Math.Cos(Math.PI / 180 * GPSLate.Latitude) * (GPSLate.Longitude - GPSEarly.Longitude);
 
                             #endregion
 
@@ -187,13 +185,21 @@ namespace org.GraphDefined.SharpMapillary
 
                         #region Calculate image direction
 
-                        ImageInfo.Image_Direction = (90 + Math.Atan2(dy, dx) * 180 / Math.PI + DirectionOffset) % 360;
+                        ImageInfo.ViewingDirection = (90 + Math.Atan2(dy, dx) * 180 / Math.PI + DirectionOffset) % 360;
 
-                        if (ImageInfo.Image_Direction < 0)
-                            ImageInfo.Image_Direction += 360;
+                        if (ImageInfo.ViewingDirection < 0)
+                            ImageInfo.ViewingDirection += 360;
 
                         #endregion
 
+                        ImageInfo.NoValidGPSFound = false;
+
+                    }
+
+                    else
+                    {
+                        ImageInfo.NoValidGPSFound = true;
+                        MapillaryInfo.NumberOfImagesWithoutGPS++;
                     }
 
                 }

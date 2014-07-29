@@ -1,6 +1,6 @@
 ﻿/*
  * Copyright (c) 2014 Achim 'ahzf' Friedland <achim@graphdefined.org>
- * This file is part of SharpMapillary <http://www.github.com/ahzf/SharpMapillary>
+ * This file is part of SharpMapillary <http://www.github.com/GraphDefined/SharpMapillary>
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -57,8 +57,8 @@ namespace org.GraphDefined.SharpMapillary
 
         #region Do(this MapillaryInfo)
 
-        public static MapillaryInfo Do(this MapillaryInfo     MapillaryInfo,
-                                       Action<MapillaryInfo>  Action)
+        public static SharpMapillaryInfo Do(this SharpMapillaryInfo     MapillaryInfo,
+                                       Action<SharpMapillaryInfo>  Action)
         {
 
             if (Action != null)
@@ -72,8 +72,8 @@ namespace org.GraphDefined.SharpMapillary
 
         #region Do(this MapillaryInfos)
 
-        public static IEnumerable<MapillaryInfo> Do(this IEnumerable<MapillaryInfo>  MapillaryInfos,
-                                                    Action<MapillaryInfo>            Action)
+        public static IEnumerable<SharpMapillaryInfo> Do(this IEnumerable<SharpMapillaryInfo>  MapillaryInfos,
+                                                    Action<SharpMapillaryInfo>            Action)
         {
 
             if (Action != null)

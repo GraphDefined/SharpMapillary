@@ -40,14 +40,16 @@
     <Reference Include="System.Xml" />
   </ItemGroup>
   <ItemGroup>
+    <Compile Include="Classes\GPSInfo.cs" />
     <Compile Include="Classes\DMS.cs" />
+    <Compile Include="ExtentionMethods\ResizeImage.cs" />
     <Compile Include="ExtentionMethods\FixGeoKML.cs" />
     <Compile Include="ExtentionMethods\GeoJSON.cs" />
     <Compile Include="ENUMs\GPSInterpolation.cs" />
     <Compile Include="ExtentionMethods\LoadGPXs.cs" />
     <Compile Include="ExtentionMethods\LoadJPGs.cs" />
-    <Compile Include="Classes\MapillaryImageInfo.cs" />
-    <Compile Include="Classes\MapillaryInfo.cs" />
+    <Compile Include="Classes\ImageEXIFInfo.cs" />
+    <Compile Include="Classes\SharpMapillaryInfo.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
     <Compile Include="ExtentionMethods\SharpMapillary.cs" />
     <Compile Include="ExtentionMethods\Store.cs" />

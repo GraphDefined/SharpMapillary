@@ -1,6 +1,6 @@
 ﻿/*
  * Copyright (c) 2014 Achim 'ahzf' Friedland <achim@graphdefined.org>
- * This file is part of SharpMapillary <http://www.github.com/ahzf/SharpMapillary>
+ * This file is part of SharpMapillary <http://www.github.com/GraphDefined/SharpMapillary>
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.

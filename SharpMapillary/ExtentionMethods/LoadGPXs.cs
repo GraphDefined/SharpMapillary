@@ -1,6 +1,6 @@
 ﻿/*
  * Copyright (c) 2014 Achim 'ahzf' Friedland <achim@graphdefined.org>
- * This file is part of SharpMapillary <http://www.github.com/ahzf/SharpMapillary>
+ * This file is part of SharpMapillary <http://www.github.com/GraphDefined/SharpMapillary>
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -31,27 +31,31 @@ namespace org.GraphDefined.SharpMapillary
     public static partial class SharpMapillary
     {
 
-        #region LoadGPXs(this Path)
+        #region LoadGPXs(this Path, OnDupliateTimestamp = null)
 
-        public static MapillaryInfo LoadGPXs(this String Path)
+        public static SharpMapillaryInfo LoadGPXs(this String                                       Path,
+                                                  Action<String, DateTime, Double, Double, Double>  OnDupliateTimestamp = null)
         {
-            return LoadGPXs(Path, null);
+            return LoadGPXs(Path, null, OnDupliateTimestamp);
         }
 
         #endregion
 
-        #region LoadGPXs(this MapillaryInfo)
+        #region LoadGPXs(this MapillaryInfo, OnDupliateTimestamp = null)
 
-        public static MapillaryInfo LoadGPXs(this MapillaryInfo MapillaryInfo)
+        public static SharpMapillaryInfo LoadGPXs(this SharpMapillaryInfo                           MapillaryInfo,
+                                                  Action<String, DateTime, Double, Double, Double>  OnDupliateTimestamp = null)
         {
-            return LoadGPXs(MapillaryInfo.FilePath, MapillaryInfo);
+            return LoadGPXs(MapillaryInfo.FilePath, MapillaryInfo, OnDupliateTimestamp);
         }
 
         #endregion
 
-        #region LoadGPXs(Path, MapillaryInfo = null)
+        #region LoadGPXs(Path, MapillaryInfo = null, OnDupliateTimestamp = null)
 
-        public static MapillaryInfo LoadGPXs(String Path, MapillaryInfo MapillaryInfo = null)
+        public static SharpMapillaryInfo LoadGPXs(String                                            Path,
+                                                  SharpMapillaryInfo                                MapillaryInfo        = null,
+                                                  Action<String, DateTime, Double, Double, Double>  OnDupliateTimestamp  = null)
         {
 
             #region Initial checks...
@@ -62,7 +66,7 @@ namespace org.GraphDefined.SharpMapillary
             #endregion
 
             foreach (var GPXFile in Directory.EnumerateFiles(Path, "*.gpx"))
-                LoadGPX(GPXFile, ref MapillaryInfo);
+                LoadGPX(GPXFile, ref MapillaryInfo, OnDupliateTimestamp);
 
             return MapillaryInfo;
 
@@ -70,50 +74,57 @@ namespace org.GraphDefined.SharpMapillary
 
         #endregion
 
-        #region LoadGPXs(this Paths)
+        #region LoadGPXs(this Paths, OnDupliateTimestamp = null)
 
-        public static IEnumerable<MapillaryInfo> LoadGPXs(this IEnumerable<String> Paths)
+        public static IEnumerable<SharpMapillaryInfo> LoadGPXs(this IEnumerable<String>                          Paths,
+                                                               Action<String, DateTime, Double, Double, Double>  OnDupliateTimestamp = null)
         {
-            return Paths.Select(v => LoadGPXs(v, null));
+            return Paths.Select(v => LoadGPXs(v, null, OnDupliateTimestamp));
         }
 
         #endregion
 
-        #region LoadGPXs(this MapillaryInfos)
+        #region LoadGPXs(this MapillaryInfos, OnDupliateTimestamp = null)
 
-        public static IEnumerable<MapillaryInfo> LoadGPXs(this IEnumerable<MapillaryInfo> MapillaryInfos)
+        public static IEnumerable<SharpMapillaryInfo> LoadGPXs(this IEnumerable<SharpMapillaryInfo>              MapillaryInfos,
+                                                               Action<String, DateTime, Double, Double, Double>  OnDupliateTimestamp = null)
         {
-            return MapillaryInfos.Select(v => LoadGPXs(v.FilePath, v));
+            return MapillaryInfos.Select(v => LoadGPXs(v.FilePath, v, OnDupliateTimestamp));
         }
 
         #endregion
 
 
-        #region LoadGPX(this GPXFile)
+        #region LoadGPX(this GPXFile, OnDupliateTimestamp = null)
 
-        public static MapillaryInfo LoadGPX(this String GPXFile)
+        public static SharpMapillaryInfo LoadGPX(this String                                       GPXFile,
+                                                 Action<String, DateTime, Double, Double, Double>  OnDupliateTimestamp = null)
         {
 
-            var Mapillary = new MapillaryInfo(GPXFile.Substring(0, GPXFile.LastIndexOf(Path.DirectorySeparatorChar)));
+            var Mapillary = new SharpMapillaryInfo(GPXFile.Substring(0, GPXFile.LastIndexOf(Path.DirectorySeparatorChar)));
 
-            return LoadGPX(GPXFile, ref Mapillary);
+            return LoadGPX(GPXFile, ref Mapillary, OnDupliateTimestamp);
 
         }
 
         #endregion
 
-        #region LoadGPX(this MapillaryInfo, GPXFile)
+        #region LoadGPX(this MapillaryInfo, GPXFile, OnDupliateTimestamp = null)
 
-        public static MapillaryInfo LoadGPX(this MapillaryInfo MapillaryInfo, String GPXFile)
+        public static SharpMapillaryInfo LoadGPX(this SharpMapillaryInfo                           MapillaryInfo,
+                                                 String                                            GPXFile,
+                                                 Action<String, DateTime, Double, Double, Double>  OnDupliateTimestamp = null)
         {
-            return LoadGPX(GPXFile, ref MapillaryInfo);
+            return LoadGPX(GPXFile, ref MapillaryInfo, OnDupliateTimestamp);
         }
 
         #endregion
 
-        #region LoadGPX(GPXFile, ref MapillaryInfo)
+        #region LoadGPX(GPXFile, ref MapillaryInfo, OnDupliateTimestamp = null)
 
-        public static MapillaryInfo LoadGPX(String GPXFile, ref MapillaryInfo MapillaryInfo)
+        public static SharpMapillaryInfo LoadGPX(String                                            GPXFile,
+                                                 ref SharpMapillaryInfo                            MapillaryInfo,
+                                                 Action<String, DateTime, Double, Double, Double>  OnDupliateTimestamp = null)
         {
 
             #region GPX XML docu...
@@ -146,19 +157,19 @@ namespace org.GraphDefined.SharpMapillary
                 throw new ArgumentNullException("Illegal path!");
 
             if (MapillaryInfo == null)
-                MapillaryInfo = new MapillaryInfo(GPXFile.Substring(0, GPXFile.LastIndexOf(Path.DirectorySeparatorChar)));
+                MapillaryInfo = new SharpMapillaryInfo(GPXFile.Substring(0, GPXFile.LastIndexOf(Path.DirectorySeparatorChar)));
 
             #endregion
 
             #region Init...
 
-            XNamespace          NS              = "http://www.topografix.com/GPX/1/1";
-            MapillaryImageInfo  MapillaryImage  = null;
+            XNamespace      NS              = "http://www.topografix.com/GPX/1/1";
+            GPSInfo         GPSInfoElement  = null;
 
-            DateTime            GPS_Timestamp;
-            Double              GPS_Latitude;
-            Double              GPS_Longitude;
-            Double              GPS_Altitude;
+            DateTime        Timestamp;
+            Double          Latitude;
+            Double          Longitude;
+            Double          Altitude;
 
             #endregion
 
@@ -166,41 +177,33 @@ namespace org.GraphDefined.SharpMapillary
             {
 
                 foreach (var GPSTrackPoint in XDocument.Load(GPXFile).
-                                                            Root.
-                                                            Elements(NS + "trk").
-                                                            Elements(NS + "trkseg").
-                                                            Elements(NS + "trkpt"))
+                                                             Root.
+                                                             Elements(NS + "trk").
+                                                             Elements(NS + "trkseg").
+                                                             Elements(NS + "trkpt"))
 
                 {
 
-                    GPS_Timestamp  = DateTime.Parse(GPSTrackPoint.Element(NS + "time").Value).ToUniversalTime();
-                    GPS_Latitude   = Double.  Parse(GPSTrackPoint.Attribute("lat").Value);
-                    GPS_Longitude  = Double.  Parse(GPSTrackPoint.Attribute("lon").Value);
-                    GPS_Altitude   = Double.  Parse(GPSTrackPoint.Element(NS + "ele").Value);
+                    Timestamp  = DateTime.Parse(GPSTrackPoint.Element(NS + "time").Value).ToUniversalTime();
+                    Latitude   = Double.  Parse(GPSTrackPoint.Attribute("lat").Value);
+                    Longitude  = Double.  Parse(GPSTrackPoint.Attribute("lon").Value);
+                    Altitude   = Double.  Parse(GPSTrackPoint.Element(NS + "ele").Value);
 
                     MapillaryInfo.NumberOfGPSPoints++;
 
-                    if (!MapillaryInfo.Data.TryGetValue(GPS_Timestamp, out MapillaryImage))
-                        MapillaryInfo.Data.Add(GPS_Timestamp, new MapillaryImageInfo() {
-                                                                     GPS_Timestamp  = GPS_Timestamp,
-                                                                     GPS_Latitude   = GPS_Latitude,
-                                                                     GPS_Longitude  = GPS_Longitude,
-                                                                     GPS_Altitude   = GPS_Altitude
-                                                                 });
+                    if (!MapillaryInfo.GPSData.TryGetValue(Timestamp, out GPSInfoElement))
+                        MapillaryInfo.GPSData.Add(Timestamp, new GPSInfo(Timestamp,
+                                                                         Latitude,
+                                                                         Longitude,
+                                                                         Altitude));
 
                     else
                     {
 
-                        if (!MapillaryImage.GPS_Timestamp.HasValue)
-                        {
-                            MapillaryImage.GPS_Timestamp  = GPS_Timestamp;
-                            MapillaryImage.GPS_Latitude   = GPS_Latitude;
-                            MapillaryImage.GPS_Longitude  = GPS_Longitude;
-                            MapillaryImage.GPS_Altitude   = GPS_Altitude;
-                        }
+                        MapillaryInfo.NumberOfDuplicateGPSTimestamps++;
 
-                        else
-                            Console.WriteLine("Double GPS timestamp: " + GPS_Timestamp.ToString("s") + "Z" + " in GPX file: " + GPXFile);
+                        if (OnDupliateTimestamp != null)
+                            OnDupliateTimestamp(GPXFile, Timestamp, Latitude, Longitude, Altitude);
 
                     }
 
