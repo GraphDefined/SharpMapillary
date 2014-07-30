@@ -35,15 +35,16 @@ namespace org.GraphDefined.SharpMapillary
         public static void Main(String[] Arguments)
         {
 
-            SharpMapillary.Start(@"E:\_Projekte\Mapillary\Jena-Ziegenhain2").
+            SharpMapillary.Start(@"E:\_Projekte\Mapillary\Jena-Ost3").
 
-                                 LoadGPXs(OnDupliateTimestamp: (GPXFile,  Timestamp, lat, lng, alt) => Console.WriteLine("Duplicate GPS timestamp: " + Timestamp.ToString("s") + "Z" + " in GPX file: " + GPXFile)).
-                                 Do(v => Console.WriteLine("Number of GPS trackpoints: " + v.NumberOfGPSPoints)).
-                                 Do(v => Console.WriteLine("Number of dupliate GPS timestamps: " + v.NumberOfDuplicateGPSTimestamps)).
+                                 LoadGPXs(OnDupliateTimestamp: (GPXFile, Timestamp, lat, lng, alt) => Console.WriteLine("Duplicate GPS timestamp: " + Timestamp.ToString("s") + "Z" + " in GPX file: " + GPXFile)).
+                                 Do(v => Console.WriteLine("Number of GPS trackpoints: " +          v.NumberOfGPSPoints)).
+                                 Do(v => Console.WriteLine("Number of dupliate GPS timestamps: " +  v.NumberOfDuplicateGPSTimestamps)).
 
-                                 LoadJPEGs(OnDupliateTimestamp: (JPEGFile, Timestamp)               => Console.WriteLine("Duplicate EXIF timestamp: " + Timestamp.ToString("s") + "Z" + " in image file: " + JPEGFile)).
+                                 LoadJPEGs(OnProcessed:         (All, Processed, Percentage)       => { if (Processed % 25 == 0) { Console.CursorLeft = 0; Console.Write(Percentage.ToString("0.00") + "% of all images loaded..."); } },
+                                           OnDupliateTimestamp: (JPEGFile, Timestamp)              => Console.WriteLine("Duplicate EXIF timestamp: " + Timestamp.ToString("s") + "Z" + " in image file: " + JPEGFile)).
                                  //TimeOffset: 51).
-                                 Do(v => Console.WriteLine("Number of images: " + v.NumberOfImages)).
+                                 Do(v => Console.WriteLine("Number of images: " +                   v.NumberOfImages)).
                                  Do(v => Console.WriteLine("Number of dupliate EXIF timestamps: " + v.NumberOfDuplicateEXIFTimestamps)).
 
                                  SyncGPS().

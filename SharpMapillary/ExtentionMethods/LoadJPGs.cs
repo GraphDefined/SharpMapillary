@@ -23,6 +23,8 @@ using System.Linq;
 using System.Collections.Generic;
 
 using ExifLibrary;
+using System.Threading.Tasks;
+using System.Threading;
 
 #endregion
 
@@ -34,34 +36,39 @@ namespace org.GraphDefined.SharpMapillary
 
         //ToDo: TimeOffset -> Int16 to support values < 0!
 
-        #region LoadJPEGs(this Path, TimeOffset = null, OnDupliateTimestamp = null)
+        private static readonly Object SharpMapillaryLock = new Object();
 
-        public static SharpMapillaryInfo LoadJPEGs(this String               Path,
-                                                   Int32?                    TimeOffset           = null,
-                                                   Action<String, DateTime>  OnDupliateTimestamp  = null)
+        #region LoadJPEGs(this Path, TimeOffset = null, OnProcessed = null, OnDupliateTimestamp = null)
+
+        public static SharpMapillaryInfo LoadJPEGs(this String                     Path,
+                                                   Int32?                          TimeOffset           = null,
+                                                   Action<UInt32, UInt32, Double>  OnProcessed          = null,
+                                                   Action<String, DateTime>        OnDupliateTimestamp  = null)
         {
-            return LoadJPEGs(Path, null, TimeOffset, OnDupliateTimestamp);
+            return LoadJPEGs(Path, null, TimeOffset, OnProcessed, OnDupliateTimestamp);
         }
 
         #endregion
 
-        #region LoadJPEGs(this MapillaryInfo, TimeOffset = null, OnDupliateTimestamp = null)
+        #region LoadJPEGs(this MapillaryInfo, TimeOffset = null, OnProcessed = null, OnDupliateTimestamp = null)
 
-        public static SharpMapillaryInfo LoadJPEGs(this SharpMapillaryInfo   MapillaryInfo,
-                                                   Int32?                    TimeOffset           = null,
-                                                   Action<String, DateTime>  OnDupliateTimestamp  = null)
+        public static SharpMapillaryInfo LoadJPEGs(this SharpMapillaryInfo         MapillaryInfo,
+                                                   Int32?                          TimeOffset           = null,
+                                                   Action<UInt32, UInt32, Double>  OnProcessed          = null,
+                                                   Action<String, DateTime>        OnDupliateTimestamp  = null)
         {
-            return LoadJPEGs(MapillaryInfo.FilePath, MapillaryInfo, TimeOffset, OnDupliateTimestamp);
+            return LoadJPEGs(MapillaryInfo.FilePath, MapillaryInfo, TimeOffset, OnProcessed, OnDupliateTimestamp);
         }
 
         #endregion
 
-        #region LoadJPEGs(Path, MapillaryInfo = null, TimeOffset = null, OnDupliateTimestamp = null)
+        #region LoadJPEGs(Path, MapillaryInfo = null, TimeOffset = null, OnProcessed = null, OnDupliateTimestamp = null)
 
-        public static SharpMapillaryInfo LoadJPEGs(String                    Path,
-                                                   SharpMapillaryInfo        MapillaryInfo        = null,
-                                                   Int32?                    TimeOffset           = null,
-                                                   Action<String, DateTime>  OnDupliateTimestamp  = null)
+        public static SharpMapillaryInfo LoadJPEGs(String                          Path,
+                                                   SharpMapillaryInfo              MapillaryInfo        = null,
+                                                   Int32?                          TimeOffset           = null,
+                                                   Action<UInt32, UInt32, Double>  OnProcessed          = null,
+                                                   Action<String, DateTime>        OnDupliateTimestamp  = null)
         {
 
             #region Initial checks...
@@ -71,8 +78,21 @@ namespace org.GraphDefined.SharpMapillary
 
             #endregion
 
-            foreach (var JPEGFile in Directory.EnumerateFiles(Path, "*.JPG"))
+            var AllJPEGs                = Directory.EnumerateFiles(Path, "*.JPG").ToArray();
+            var NumberOfJPEGsFound      = (UInt32) AllJPEGs.Length;
+            var NumberOfJPEGsProcessed  = 0;
+            var OnProcessedLocal        = OnProcessed;
+
+            Parallel.ForEach(AllJPEGs, JPEGFile => {
+
                 LoadJPEG(JPEGFile, ref MapillaryInfo, TimeOffset, OnDupliateTimestamp);
+                Interlocked.Increment(ref NumberOfJPEGsProcessed);
+
+                OnProcessedLocal = OnProcessed;
+                if (OnProcessedLocal != null)
+                    OnProcessedLocal(NumberOfJPEGsFound, (UInt32) NumberOfJPEGsProcessed, (Double) NumberOfJPEGsProcessed / (Double) NumberOfJPEGsFound * 100);
+
+            });
 
             return MapillaryInfo;
 
@@ -80,24 +100,26 @@ namespace org.GraphDefined.SharpMapillary
 
         #endregion
 
-        #region LoadJPEGs(this Paths, TimeOffset = null, OnDupliateTimestamp = null)
+        #region LoadJPEGs(this Paths, TimeOffset = null, OnProcessed = null, OnDupliateTimestamp = null)
 
-        public static IEnumerable<SharpMapillaryInfo> LoadJPEGs(this IEnumerable<String>  Paths,
-                                                                Int32?                    TimeOffset           = null,
-                                                                Action<String, DateTime>  OnDupliateTimestamp  = null)
+        public static IEnumerable<SharpMapillaryInfo> LoadJPEGs(this IEnumerable<String>        Paths,
+                                                                Int32?                          TimeOffset           = null,
+                                                                Action<UInt32, UInt32, Double>  OnProcessed          = null,
+                                                                Action<String, DateTime>        OnDupliateTimestamp  = null)
         {
-            return Paths.Select(MapillaryInfo => LoadJPEGs(MapillaryInfo, null, TimeOffset, OnDupliateTimestamp));
+            return Paths.Select(MapillaryInfo => LoadJPEGs(MapillaryInfo, null, TimeOffset, OnProcessed, OnDupliateTimestamp));
         }
 
         #endregion
 
-        #region LoadJPEGs(this MapillaryInfos, TimeOffset = null, OnDupliateTimestamp = null)
+        #region LoadJPEGs(this MapillaryInfos, TimeOffset = null, OnProcessed = null, OnDupliateTimestamp = null)
 
         public static IEnumerable<SharpMapillaryInfo> LoadJPEGs(this IEnumerable<SharpMapillaryInfo>  MapillaryInfos,
                                                                 Int32?                                TimeOffset           = null,
+                                                                Action<UInt32, UInt32, Double>        OnProcessed          = null,
                                                                 Action<String, DateTime>              OnDupliateTimestamp  = null)
         {
-            return MapillaryInfos.Select(MapillaryInfo => LoadJPEGs(MapillaryInfo.FilePath, MapillaryInfo, TimeOffset, OnDupliateTimestamp));
+            return MapillaryInfos.Select(MapillaryInfo => LoadJPEGs(MapillaryInfo.FilePath, MapillaryInfo, TimeOffset, OnProcessed, OnDupliateTimestamp));
         }
 
         #endregion
@@ -145,7 +167,10 @@ namespace org.GraphDefined.SharpMapillary
                 throw new ArgumentNullException("Illegal path!");
 
             if (MapillaryInfo == null)
-                MapillaryInfo = new SharpMapillaryInfo(JPEGFile.Substring(0, JPEGFile.LastIndexOf(Path.DirectorySeparatorChar)));
+                lock (SharpMapillaryLock)
+                {
+                    MapillaryInfo = new SharpMapillaryInfo(JPEGFile.Substring(0, JPEGFile.LastIndexOf(Path.DirectorySeparatorChar)));
+                }
 
             #endregion
 
@@ -187,62 +212,67 @@ namespace org.GraphDefined.SharpMapillary
 
                 }
 
-                if (EXIFFile.Properties.ContainsKey(ExifTag.GPSLatitude))
-                {
-                    EXIF_Latitude       = (MathEx.UFraction32[]) EXIFFile.Properties[ExifTag.GPSLatitude].   Value;
-                    EXIF_LatitudeO      = (DMSLatitudeType)         EXIFFile.Properties[ExifTag.GPSLatitudeRef].Value; //ToDo: Wrong cast!
-                    Latitude            = SharpMapillary.ToLatitude(EXIF_Latitude[0].Numerator / (Double) EXIF_Latitude[0].Denominator,
-                                                                    EXIF_Latitude[1].Numerator / (Double) EXIF_Latitude[1].Denominator,
-                                                                    EXIF_Latitude[2].Numerator / (Double) EXIF_Latitude[2].Denominator,
-                                                                    EXIF_LatitudeO);
-                }
+                //if (EXIFFile.Properties.ContainsKey(ExifTag.GPSLatitude))
+                //{
+                //    EXIF_Latitude       = (MathEx.UFraction32[]) EXIFFile.Properties[ExifTag.GPSLatitude].   Value;
+                //    EXIF_LatitudeO      = (DMSLatitudeType)         EXIFFile.Properties[ExifTag.GPSLatitudeRef].Value; //ToDo: Wrong cast!
+                //    Latitude            = SharpMapillary.ToLatitude(EXIF_Latitude[0].Numerator / (Double) EXIF_Latitude[0].Denominator,
+                //                                                    EXIF_Latitude[1].Numerator / (Double) EXIF_Latitude[1].Denominator,
+                //                                                    EXIF_Latitude[2].Numerator / (Double) EXIF_Latitude[2].Denominator,
+                //                                                    EXIF_LatitudeO);
+                //}
 
-                if (EXIFFile.Properties.ContainsKey(ExifTag.GPSLongitude))
-                {
-                    EXIF_Longitude      = (MathEx.UFraction32[]) EXIFFile.Properties[ExifTag.GPSLongitude].Value;
-                    EXIF_LongitudeO     = (DMSLongitudeType)        EXIFFile.Properties[ExifTag.GPSLongitudeRef].Value; //ToDo: Wrong cast!
-                    Longitude           = SharpMapillary.ToLongitude(EXIF_Longitude[0].Numerator / (Double) EXIF_Longitude[0].Denominator,
-                                                                     EXIF_Longitude[1].Numerator / (Double) EXIF_Longitude[1].Denominator,
-                                                                     EXIF_Longitude[2].Numerator / (Double) EXIF_Longitude[2].Denominator,
-                                                                     EXIF_LongitudeO);
-                }
+                //if (EXIFFile.Properties.ContainsKey(ExifTag.GPSLongitude))
+                //{
+                //    EXIF_Longitude      = (MathEx.UFraction32[]) EXIFFile.Properties[ExifTag.GPSLongitude].Value;
+                //    EXIF_LongitudeO     = (DMSLongitudeType)        EXIFFile.Properties[ExifTag.GPSLongitudeRef].Value; //ToDo: Wrong cast!
+                //    Longitude           = SharpMapillary.ToLongitude(EXIF_Longitude[0].Numerator / (Double) EXIF_Longitude[0].Denominator,
+                //                                                     EXIF_Longitude[1].Numerator / (Double) EXIF_Longitude[1].Denominator,
+                //                                                     EXIF_Longitude[2].Numerator / (Double) EXIF_Longitude[2].Denominator,
+                //                                                     EXIF_LongitudeO);
+                //}
 
-                if (EXIFFile.Properties.ContainsKey(ExifTag.GPSAltitude))
-                    Altitude            = (Double) EXIFFile.Properties[ExifTag.GPSAltitude].Value;
+                //if (EXIFFile.Properties.ContainsKey(ExifTag.GPSAltitude))
+                //    Altitude            = (Double) EXIFFile.Properties[ExifTag.GPSAltitude].Value;
 
-                if (EXIFFile.Properties.ContainsKey(ExifTag.GPSImgDirection))
-                    Direction           = (Double) EXIFFile.Properties[ExifTag.GPSImgDirection].Value;
+                //if (EXIFFile.Properties.ContainsKey(ExifTag.GPSImgDirection))
+                //    Direction           = (Double) EXIFFile.Properties[ExifTag.GPSImgDirection].Value;
 
 
-                MapillaryInfo.NumberOfImages++;
-
-                if (!MapillaryInfo.Data.TryGetValue(Timestamp, out MapillaryImage))
-                    MapillaryInfo.Data.Add(Timestamp, new ImageEXIFInfo(JPEGFile,
-                                                                        Timestamp,
-                                                                        Latitude,
-                                                                        Longitude,
-                                                                        Altitude,
-                                                                        Direction));
-
-                else
+                lock (SharpMapillaryLock)
                 {
 
-                    if (!MapillaryImage.Timestamp.HasValue)
-                    {
-                        MapillaryImage.FileName   = JPEGFile;
-                        MapillaryImage.Timestamp  = Timestamp;
-                        MapillaryImage.Latitude   = Latitude;
-                        MapillaryImage.Longitude  = Longitude;
-                        MapillaryImage.Altitude   = Altitude;
-                    }
+                    MapillaryInfo.NumberOfImages++;
+
+                    if (!MapillaryInfo.Data.TryGetValue(Timestamp, out MapillaryImage))
+                        MapillaryInfo.Data.Add(Timestamp, new ImageEXIFInfo(JPEGFile,
+                                                                            Timestamp,
+                                                                            Latitude,
+                                                                            Longitude,
+                                                                            Altitude,
+                                                                            Direction));
 
                     else
                     {
 
-                        MapillaryInfo.NumberOfDuplicateEXIFTimestamps++;
+                        if (!MapillaryImage.Timestamp.HasValue)
+                        {
+                            MapillaryImage.FileName   = JPEGFile;
+                            MapillaryImage.Timestamp  = Timestamp;
+                            MapillaryImage.Latitude   = Latitude;
+                            MapillaryImage.Longitude  = Longitude;
+                            MapillaryImage.Altitude   = Altitude;
+                        }
 
-                        if (OnDupliateTimestamp != null)
-                            OnDupliateTimestamp(JPEGFile, Timestamp);
+                        else
+                        {
+
+                            MapillaryInfo.NumberOfDuplicateEXIFTimestamps++;
+
+                            if (OnDupliateTimestamp != null)
+                                OnDupliateTimestamp(JPEGFile, Timestamp);
+
+                        }
 
                     }
 
