@@ -35,20 +35,20 @@ namespace org.GraphDefined.SharpMapillary
         public static void Main(String[] Arguments)
         {
 
-            SharpMapillary.Start(@"E:\_Projekte\Mapillary\Jena-Ost3").
+            SharpMapillary.Start(@"E:\_Projekte\Mapillary\Jena-West2").
 
                                  LoadGPXs(OnDupliateTimestamp: (GPXFile, Timestamp, lat, lng, alt) => Console.WriteLine("Duplicate GPS timestamp: " + Timestamp.ToString("s") + "Z" + " in GPX file: " + GPXFile)).
-                                 Do(v => Console.WriteLine("Number of GPS trackpoints: " +          v.NumberOfGPSPoints)).
-                                 Do(v => Console.WriteLine("Number of dupliate GPS timestamps: " +  v.NumberOfDuplicateGPSTimestamps)).
+                                 Do(v => Console.WriteLine("Number of GPS trackpoints: " +           v.NumberOfGPSPoints)).
+                                 Do(v => Console.WriteLine("Number of duplicate GPS timestamps: " +  v.NumberOfDuplicateGPSTimestamps)).
 
                                  LoadJPEGs(OnProcessed:         (Sum, Processed, Percentage)       => { if (Processed % 25 == 0) { Console.CursorLeft = 0; Console.Write(Percentage.ToString("0.00") + "% of " + Sum + " images loaded..."); } },
-                                           OnDupliateTimestamp: (JPEGFile, Timestamp)              => Console.WriteLine("Duplicate EXIF timestamp: " + Timestamp.ToString("s") + "Z" + " in image file: " + JPEGFile),
-                                           TimeOffset:          44).
+                                           OnDupliateTimestamp: (JPEGFile, Timestamp)              => Console.WriteLine("Duplicate EXIF timestamp: " + Timestamp.ToString("s") + "Z" + " in image file: " + JPEGFile)).
+                                  //         TimeOffset:          44).
                                  Do(v => Console.WriteLine(Environment.NewLine +
-                                                           "Number of dupliate EXIF timestamps: " + v.NumberOfDuplicateEXIFTimestamps)).
+                                                           "Number of duplicate EXIF timestamps: " + v.NumberOfDuplicateEXIFTimestamps)).
 
                                  SyncGPS().
-                                 Do(v => Console.WriteLine("Number of images w/o GPS: " +           v.NumberOfImagesWithoutGPS)).
+                                 Do(v => Console.WriteLine("Number of images w/o GPS: " +            v.NumberOfImagesWithoutGPS)).
 
                                  ResizeImages(2000, 1500).
                                  Store("fixed", "noGPS").
