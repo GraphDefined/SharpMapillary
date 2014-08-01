@@ -21,10 +21,8 @@ SharpMapillary is implemented as a set of pipes. Any enumeration of file system 
     SharpMapillary.Start(@"E:\_Projekte\Mapillary\Jena-West1").
                          LoadGPXs().
                          Do(v => Console.WriteLine("Number of GPS trackpoints: " +           v.NumberOfGPSPoints)).
-                         Do(v => Console.WriteLine("Number of duplicate GPS timestamps: " +  v.NumberOfDuplicateGPSTimestamps)).
-                         LoadJPEGs(OnProcessed:         (Sum, Processed, Percentage)       => { if (Processed % 25 == 0) { Console.CursorLeft = 0; Console.Write(Percentage.ToString("0.00") + "% of " + Sum + " images loaded..."); } },                                 Do(v => Console.WriteLine(Environment.NewLine + "Number of duplicate EXIF timestamps: " + v.NumberOfDuplicateEXIFTimestamps)).
+                         LoadJPEGs(OnProcessed: (Sum, Processed, Percentage) => { if (Processed % 25 == 0) { Console.CursorLeft = 0; Console.Write(Percentage.ToString("0.00") + "% of " + Sum + " images loaded..."); } },
                          SyncGPS().
-                         Do(v => Console.WriteLine("Number of images w/o GPS: " +            v.NumberOfImagesWithoutGPS)).
                          ResizeImages(2000, 1500).
                          Store("fixed", "noGPS", (Sum, Processed, Percentage) => { if (Processed % 25 == 0) { Console.CursorLeft = 0; Console.Write(Percentage.ToString("0.00") + "% of " + Sum + " images stored..."); } }).                                  ToArray();
 
