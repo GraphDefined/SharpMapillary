@@ -81,7 +81,7 @@ namespace org.GraphDefined.SharpMapillary
 
             #endregion
 
-            foreach (var ImageInfo in MapillaryInfo.Data.Values)
+            foreach (var ImageInfo in MapillaryInfo.Images.Values)
             {
 
                 // == is an image!

@@ -26,6 +26,8 @@ using System.Drawing.Drawing2D;
 using System.Collections.Generic;
 
 using ExifLibrary;
+using System.Threading.Tasks;
+using System.Threading;
 
 #endregion
 
@@ -35,45 +37,61 @@ namespace org.GraphDefined.SharpMapillary
     public static partial class SharpMapillary
     {
 
-        #region Store(MapillaryInfos, SubDirectory = "fixed", SubDirectoryNoGPS = "noGPS")
+        #region Store(MapillaryInfos, SubDirectory = "fixed", SubDirectoryNoGPS = "noGPS", OnProcessed = null
 
         public static IEnumerable<SharpMapillaryInfo> Store(this IEnumerable<SharpMapillaryInfo>  MapillaryInfos,
-                                                       String                           SubDirectory       = "fixed",
-                                                       String                           SubDirectoryNoGPS  = "noGPS")
+                                                            String                                SubDirectory       = "fixed",
+                                                            String                                SubDirectoryNoGPS  = "noGPS",
+                                                            Action<UInt32, UInt32, Double>        OnProcessed        = null)
         {
-            return MapillaryInfos.Select(MapillaryInfo => Store(ref MapillaryInfo, SubDirectory));
+            return MapillaryInfos.Select(MapillaryInfo => Store(ref MapillaryInfo, SubDirectory, SubDirectoryNoGPS, OnProcessed));
         }
 
         #endregion
 
-        #region Store(this MapillaryInfo, SubDirectory = "fixed", SubDirectoryNoGPS = "noGPS")
+        #region Store(this MapillaryInfo, SubDirectory = "fixed", SubDirectoryNoGPS = "noGPS", OnProcessed = null
 
-        public static SharpMapillaryInfo Store(this SharpMapillaryInfo  MapillaryInfo,
-                                          String              SubDirectory       = "fixed",
-                                          String              SubDirectoryNoGPS  = "noGPS")
+        public static SharpMapillaryInfo Store(this SharpMapillaryInfo         MapillaryInfo,
+                                               String                          SubDirectory       = "fixed",
+                                               String                          SubDirectoryNoGPS  = "noGPS",
+                                               Action<UInt32, UInt32, Double>  OnProcessed        = null)
         {
-            return Store(ref MapillaryInfo);
+            return Store(ref MapillaryInfo, SubDirectory, SubDirectoryNoGPS, OnProcessed);
         }
 
         #endregion
 
-        #region Store(ref MapillaryInfo, SubDirectory = "fixed", SubDirectoryNoGPS = "noGPS")
+        #region Store(ref MapillaryInfo, SubDirectory = "fixed", SubDirectoryNoGPS = "noGPS", OnProcessed = null)
 
-        public static SharpMapillaryInfo Store(ref SharpMapillaryInfo  MapillaryInfo,
-                                          String             SubDirectory       = "fixed",
-                                          String             SubDirectoryNoGPS  = "noGPS")
+        public static SharpMapillaryInfo Store(ref SharpMapillaryInfo          MapillaryInfo,
+                                               String                          SubDirectory       = "fixed",
+                                               String                          SubDirectoryNoGPS  = "noGPS",
+                                               Action<UInt32, UInt32, Double>  OnProcessed        = null)
         {
 
-            ImageFile EXIFFile      = null;
-            DMS       LatitudeDMS   = null;
-            DMS       LongitudeDMS  = null;
-            Bitmap    newImage, oldImage;
-            Graphics  g;
+            #region Data
+
+            // ref/out parameters are not allowed inside Parallel.ForEach!
+            var _MapillaryInfo              = MapillaryInfo;
+
+            var EXIFFile                    = new ThreadLocal<ImageFile>();
+            var LatitudeDMS                 = new ThreadLocal<DMS>();
+            var LongitudeDMS                = new ThreadLocal<DMS>();
+            var newImage                    = new ThreadLocal<Bitmap>();
+            var oldImage                    = new ThreadLocal<Bitmap>();
+            var g                           = new ThreadLocal<Graphics>();
+
+            var NumberOfJPEGs               = (UInt32) MapillaryInfo.Images.Count;
+            var NumberOfJPEGsProcessed      = 0;
+            var NumberOfImagesWithoutGPS    = 0;
+            var OnProcessedLocal            = OnProcessed;
+
+            #endregion
 
             Directory.CreateDirectory(MapillaryInfo.FilePath + Path.DirectorySeparatorChar + SubDirectory);
 
-            foreach (var ImageInfo in MapillaryInfo.Data.Values)
-            {
+            Parallel.ForEach(MapillaryInfo.Images.Values,
+                             ImageInfo => {
 
                 // == is an image!
                 if (ImageInfo.FileName != null &&
@@ -89,38 +107,38 @@ namespace org.GraphDefined.SharpMapillary
                         ImageInfo.Altitude. HasValue)
                     {
 
-                        EXIFFile = ImageFile.FromFile(ImageInfo.FileName);
+                        EXIFFile.Value = ImageFile.FromFile(ImageInfo.FileName);
 
                         #region Set/update EXIF data...
 
-                        LatitudeDMS  = ImageInfo.Latitude. Value.ToDMSLat();
-                        LongitudeDMS = ImageInfo.Longitude.Value.ToDMSLng();
+                        LatitudeDMS. Value  = ImageInfo.Latitude. Value.ToDMSLat();
+                        LongitudeDMS.Value  = ImageInfo.Longitude.Value.ToDMSLng();
 
-                        if (!EXIFFile.Properties.ContainsKey(ExifTag.GPSLatitude))
-                            EXIFFile.Properties.Set(ExifTag.GPSLatitude, LatitudeDMS.Degree, LatitudeDMS.Minute, LatitudeDMS.Second);
+                        if (!EXIFFile.Value.Properties.ContainsKey(ExifTag.GPSLatitude))
+                            EXIFFile.Value.Properties.Set(ExifTag.GPSLatitude, LatitudeDMS.Value.Degree, LatitudeDMS.Value.Minute, LatitudeDMS.Value.Second);
 
-                        if (!EXIFFile.Properties.ContainsKey(ExifTag.GPSLatitudeRef))
-                            EXIFFile.Properties.Set(ExifTag.GPSLatitudeRef, ImageInfo.Latitude > 0 ? GPSLatitudeRef.North : GPSLatitudeRef.South);
+                        if (!EXIFFile.Value.Properties.ContainsKey(ExifTag.GPSLatitudeRef))
+                            EXIFFile.Value.Properties.Set(ExifTag.GPSLatitudeRef, ImageInfo.Latitude > 0 ? GPSLatitudeRef.North : GPSLatitudeRef.South);
 
-                        if (!EXIFFile.Properties.ContainsKey(ExifTag.GPSLongitude))
-                            EXIFFile.Properties.Set(ExifTag.GPSLongitude, LongitudeDMS.Degree, LongitudeDMS.Minute, LongitudeDMS.Second);
+                        if (!EXIFFile.Value.Properties.ContainsKey(ExifTag.GPSLongitude))
+                            EXIFFile.Value.Properties.Set(ExifTag.GPSLongitude, LongitudeDMS.Value.Degree, LongitudeDMS.Value.Minute, LongitudeDMS.Value.Second);
 
-                        if (!EXIFFile.Properties.ContainsKey(ExifTag.GPSLongitudeRef))
-                            EXIFFile.Properties.Set(ExifTag.GPSLongitudeRef, ImageInfo.Longitude > 0 ? GPSLongitudeRef.East : GPSLongitudeRef.West);
+                        if (!EXIFFile.Value.Properties.ContainsKey(ExifTag.GPSLongitudeRef))
+                            EXIFFile.Value.Properties.Set(ExifTag.GPSLongitudeRef, ImageInfo.Longitude > 0 ? GPSLongitudeRef.East : GPSLongitudeRef.West);
 
-                        if (!EXIFFile.Properties.ContainsKey(ExifTag.GPSAltitude))
-                            EXIFFile.Properties.Set(ExifTag.GPSAltitude, ImageInfo.Altitude.Value);
+                        if (!EXIFFile.Value.Properties.ContainsKey(ExifTag.GPSAltitude))
+                            EXIFFile.Value.Properties.Set(ExifTag.GPSAltitude, ImageInfo.Altitude.Value);
 
-                        if (!EXIFFile.Properties.ContainsKey(ExifTag.GPSAltitudeRef))
-                            EXIFFile.Properties.Set(ExifTag.GPSAltitudeRef, GPSAltitudeRef.AboveSeaLevel);
+                        if (!EXIFFile.Value.Properties.ContainsKey(ExifTag.GPSAltitudeRef))
+                            EXIFFile.Value.Properties.Set(ExifTag.GPSAltitudeRef, GPSAltitudeRef.AboveSeaLevel);
 
-                        if (!EXIFFile.Properties.ContainsKey(ExifTag.GPSImgDirection))
-                            EXIFFile.Properties.Add(new ExifURational(ExifTag.GPSImgDirection, new MathEx.UFraction32(ImageInfo.ViewingDirection)));
+                        if (!EXIFFile.Value.Properties.ContainsKey(ExifTag.GPSImgDirection))
+                            EXIFFile.Value.Properties.Add(new ExifURational(ExifTag.GPSImgDirection, new MathEx.UFraction32(ImageInfo.ViewingDirection)));
 
 
 
-                        if (!EXIFFile.Properties.ContainsKey(ExifTag.Artist))
-                            EXIFFile.Properties.Set(ExifTag.Artist, "Achim 'ahzf' Friedland <achim@graphdefined.org>");
+                        if (!EXIFFile.Value.Properties.ContainsKey(ExifTag.Artist))
+                            EXIFFile.Value.Properties.Set(ExifTag.Artist, "Achim 'ahzf' Friedland <achim@graphdefined.org>");
 
                         //// Used by GoPro
                         //if (!EXIFFile.Properties.ContainsKey(ExifTag.ImageDescription))
@@ -130,26 +148,26 @@ namespace org.GraphDefined.SharpMapillary
                         //if (!EXIFFile.Properties.ContainsKey(ExifTag.Software))
                         //    EXIFFile.Properties.Set(ExifTag.Software, "Software");
 
-                        if (!EXIFFile.Properties.ContainsKey(ExifTag.UserComment))
-                            EXIFFile.Properties.Set(ExifTag.UserComment, "Mapillary");
+                        if (!EXIFFile.Value.Properties.ContainsKey(ExifTag.UserComment))
+                            EXIFFile.Value.Properties.Set(ExifTag.UserComment, "Mapillary");
 
-                        if (!EXIFFile.Properties.ContainsKey(ExifTag.WindowsAuthor))
-                            EXIFFile.Properties.Set(ExifTag.WindowsAuthor, "Achim 'ahzf' Friedland <achim@graphdefined.org>");
+                        if (!EXIFFile.Value.Properties.ContainsKey(ExifTag.WindowsAuthor))
+                            EXIFFile.Value.Properties.Set(ExifTag.WindowsAuthor, "Achim 'ahzf' Friedland <achim@graphdefined.org>");
 
                         //if (!EXIFFile.Properties.ContainsKey(ExifTag.WindowsComment))
                         //    EXIFFile.Properties.Set(ExifTag.WindowsComment, "WindowsComment");
 
-                        if (!EXIFFile.Properties.ContainsKey(ExifTag.WindowsKeywords))
-                            EXIFFile.Properties.Set(ExifTag.WindowsKeywords, "Mapillary; Deutschland; Thüringen; Jena; GPSLinearInterpolation");
+                        if (!EXIFFile.Value.Properties.ContainsKey(ExifTag.WindowsKeywords))
+                            EXIFFile.Value.Properties.Set(ExifTag.WindowsKeywords, "Mapillary; Deutschland; Thüringen; Jena; GPSLinearInterpolation");
 
-                        if (!EXIFFile.Properties.ContainsKey(ExifTag.WindowsSubject))
-                            EXIFFile.Properties.Set(ExifTag.WindowsSubject, "Mapillary");
+                        if (!EXIFFile.Value.Properties.ContainsKey(ExifTag.WindowsSubject))
+                            EXIFFile.Value.Properties.Set(ExifTag.WindowsSubject, "Mapillary");
 
                         //if (!EXIFFile.Properties.ContainsKey(ExifTag.WindowsTitle))
                         //    EXIFFile.Properties.Set(ExifTag.WindowsTitle, "WindowsTitle");
 
-                        if (!EXIFFile.Properties.ContainsKey(ExifTag.Copyright))
-                            EXIFFile.Properties.Set(ExifTag.Copyright, "Creative Commons Attribution-NonCommercial 4.0 International License (CC BY-NC)");
+                        if (!EXIFFile.Value.Properties.ContainsKey(ExifTag.Copyright))
+                            EXIFFile.Value.Properties.Set(ExifTag.Copyright, "Creative Commons Attribution-NonCommercial 4.0 International License (CC BY-NC)");
 
                         //if (!EXIFFile.Properties.ContainsKey(ExifTag.ImageUniqueID))
                         //    EXIFFile.Properties.Set(ExifTag.ImageUniqueID, "4711");
@@ -160,30 +178,30 @@ namespace org.GraphDefined.SharpMapillary
 
                         var MS = new MemoryStream();
 
-                        EXIFFile.Save(MS);
+                        EXIFFile.Value.Save(MS);
 
                         #endregion
 
                         #region Resize the image...
 
-                        oldImage = new Bitmap(MS);
-                        newImage = new Bitmap((Int32) MapillaryInfo.FinalImageWidth,
-                                              (Int32) MapillaryInfo.FinalImageHeight);
+                        oldImage.Value = new Bitmap(MS);
+                        newImage.Value = new Bitmap((Int32) _MapillaryInfo.FinalImageWidth,
+                                                    (Int32) _MapillaryInfo.FinalImageHeight);
 
-                        g                     = Graphics.FromImage((Image) newImage);
-                        g.InterpolationMode   = InterpolationMode.HighQualityBicubic;
-                        g.CompositingQuality  = CompositingQuality.HighQuality;
-                        g.CompositingMode     = CompositingMode.SourceCopy;
-                        g.DrawImage(oldImage,
-                                    0, 0,
-                                    (Int32) MapillaryInfo.FinalImageWidth,
-                                    (Int32) MapillaryInfo.FinalImageHeight);
+                        g.Value                     = Graphics.FromImage((Image) newImage.Value);
+                        g.Value.InterpolationMode   = InterpolationMode.HighQualityBicubic;
+                        g.Value.CompositingQuality  = CompositingQuality.HighQuality;
+                        g.Value.CompositingMode     = CompositingMode.SourceCopy;
+                        g.Value.DrawImage(oldImage.Value,
+                                          0, 0,
+                                          (Int32) _MapillaryInfo.FinalImageWidth,
+                                          (Int32) _MapillaryInfo.FinalImageHeight);
 
-                        g.Dispose();
+                        g.Value.Dispose();
 
                         // Copy all metadata...
-                        foreach (var PropertyItem in oldImage.PropertyItems)
-                            newImage.SetPropertyItem(PropertyItem);
+                        foreach (var PropertyItem in oldImage.Value.PropertyItems)
+                            newImage.Value.SetPropertyItem(PropertyItem);
 
                         //// Get an ImageCodecInfo object that represents the JPEG codec.
                         //var imageCodecInfo = GetEncoderInfo(ImageFormat.Jpeg);
@@ -203,16 +221,22 @@ namespace org.GraphDefined.SharpMapillary
 
                         #region Store resized image on disc...
 
-                        newImage.Save(String.Concat(MapillaryInfo.FilePath,
-                                                    Path.DirectorySeparatorChar,
-                                                    SubDirectory,
-                                                    Path.DirectorySeparatorChar,
-                                                    ImageInfo.FileName.Remove(0, ImageInfo.FileName.LastIndexOf(Path.DirectorySeparatorChar) + 1)),
-                                      ImageFormat.Jpeg);
+                        newImage.Value.Save(String.Concat(_MapillaryInfo.FilePath,
+                                                          Path.DirectorySeparatorChar,
+                                                          SubDirectory,
+                                                          Path.DirectorySeparatorChar,
+                                                          ImageInfo.FileName.Remove(0, ImageInfo.FileName.LastIndexOf(Path.DirectorySeparatorChar) + 1)),
+                                            ImageFormat.Jpeg);
 
-                        newImage.Dispose();
+                        newImage.Value.Dispose();
 
                         #endregion
+
+                        Interlocked.Increment(ref NumberOfJPEGsProcessed);
+
+                        OnProcessedLocal = OnProcessed;
+                        if (OnProcessedLocal != null)
+                            OnProcessedLocal(NumberOfJPEGs, (UInt32) NumberOfJPEGsProcessed, (Double) NumberOfJPEGsProcessed / (Double) NumberOfJPEGs * 100);
 
                     }
 
@@ -226,14 +250,14 @@ namespace org.GraphDefined.SharpMapillary
                         if (ImageInfo.FileName != null)
                         {
 
-                            Directory.CreateDirectory(MapillaryInfo.FilePath + Path.DirectorySeparatorChar + SubDirectoryNoGPS);
+                            Directory.CreateDirectory(_MapillaryInfo.FilePath + Path.DirectorySeparatorChar + SubDirectoryNoGPS);
 
                             File.Copy(ImageInfo.FileName,
-                                      MapillaryInfo.FilePath +
+                                      _MapillaryInfo.FilePath +
                                       Path.DirectorySeparatorChar + SubDirectoryNoGPS +
                                       Path.DirectorySeparatorChar + ImageInfo.FileName.Remove(0, ImageInfo.FileName.LastIndexOf(Path.DirectorySeparatorChar) + 1));
 
-                            MapillaryInfo.NumberOfImagesWithoutGPS++;
+                            Interlocked.Increment(ref NumberOfImagesWithoutGPS);
 
                         }
 
@@ -243,9 +267,11 @@ namespace org.GraphDefined.SharpMapillary
 
                 }
 
-            }
+            });
 
-            return MapillaryInfo;
+            _MapillaryInfo.NumberOfImagesWithoutGPS = (UInt32) NumberOfImagesWithoutGPS;
+
+            return _MapillaryInfo;
 
         }
 

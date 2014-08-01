@@ -244,8 +244,8 @@ namespace org.GraphDefined.SharpMapillary
 
                     MapillaryInfo.NumberOfImages++;
 
-                    if (!MapillaryInfo.Data.TryGetValue(Timestamp, out MapillaryImage))
-                        MapillaryInfo.Data.Add(Timestamp, new ImageEXIFInfo(JPEGFile,
+                    if (!MapillaryInfo.Images.TryGetValue(Timestamp, out MapillaryImage))
+                        MapillaryInfo.Images.Add(Timestamp, new ImageEXIFInfo(JPEGFile,
                                                                             Timestamp,
                                                                             Latitude,
                                                                             Longitude,

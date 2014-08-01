@@ -35,7 +35,7 @@ namespace org.GraphDefined.SharpMapillary
         public UInt32                                         NumberOfDuplicateGPSTimestamps    { get; set; }
         public UInt32                                         NumberOfDuplicateEXIFTimestamps   { get; set; }
         public SortedDictionary<DateTime, GPSInfo>            GPSData                           { get; private set; }
-        public SortedDictionary<DateTime, ImageEXIFInfo>      Data                              { get; private set; }
+        public SortedDictionary<DateTime, ImageEXIFInfo>      Images                            { get; private set; }
         public SortedDictionary<Double, UInt32>               DiffHistogram                     { get; private set; }
 
         public UInt32?                                        FinalImageWidth                   { get; set; }
@@ -47,7 +47,7 @@ namespace org.GraphDefined.SharpMapillary
 
             this.FilePath       = FilePath;
             this.GPSData        = new SortedDictionary<DateTime,GPSInfo>();
-            this.Data           = new SortedDictionary<DateTime, ImageEXIFInfo>();
+            this.Images           = new SortedDictionary<DateTime, ImageEXIFInfo>();
             this.DiffHistogram  = new SortedDictionary<Double, UInt32>();
 
         }
