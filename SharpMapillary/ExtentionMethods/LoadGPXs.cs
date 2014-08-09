@@ -22,6 +22,7 @@ using System.IO;
 using System.Linq;
 using System.Xml.Linq;
 using System.Collections.Generic;
+using System.Globalization;
 
 #endregion
 
@@ -185,9 +186,9 @@ namespace org.GraphDefined.SharpMapillary
                 {
 
                     Timestamp  = DateTime.Parse(GPSTrackPoint.Element(NS + "time").Value).ToUniversalTime();
-                    Latitude   = Double.  Parse(GPSTrackPoint.Attribute("lat").Value);
-                    Longitude  = Double.  Parse(GPSTrackPoint.Attribute("lon").Value);
-                    Altitude   = Double.  Parse(GPSTrackPoint.Element(NS + "ele").Value);
+                    Latitude   = Double.  Parse(GPSTrackPoint.Attribute("lat").Value,    CultureInfo.InvariantCulture);
+                    Longitude  = Double.  Parse(GPSTrackPoint.Attribute("lon").Value,    CultureInfo.InvariantCulture);
+                    Altitude   = Double.  Parse(GPSTrackPoint.Element(NS + "ele").Value, CultureInfo.InvariantCulture);
 
                     MapillaryInfo.NumberOfGPSPoints++;
 
