@@ -56,6 +56,10 @@
     <Compile Include="ExtentionMethods\SyncGPS.cs" />
   </ItemGroup>
   <ItemGroup>
+    <ProjectReference Include="..\libs\Aegir\Aegir\Aegir.csproj">
+      <Project>{4d8ffccd-738d-41aa-a527-8cfdfe0a681d}</Project>
+      <Name>Aegir</Name>
+    </ProjectReference>
     <ProjectReference Include="..\libs\ExifTools\ExifLibrary\ExifLibrary.csproj">
       <Project>{c29ba585-e27b-4ad0-9ad1-490b5e0e2a5e}</Project>
       <Name>ExifLibrary</Name>

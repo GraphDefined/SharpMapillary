@@ -1,3 +1,21 @@
 [submodule "libs/ExifTools"]
 	path = libs/ExifTools
 	url = git@github.com:ahzf/ExifLibrary.git
+[submodule "libs/Eunomia"]
+	path = libs/Eunomia
+	url = git@github.com:Vanaheimr/Eunomia.git
+[submodule "libs/Illias"]
+	path = libs/Illias
+	url = git@github.com:Vanaheimr/Illias.git
+[submodule "libs/Styx"]
+	path = libs/Styx
+	url = git@github.com:Vanaheimr/Styx.git
+[submodule "libs/Balder"]
+	path = libs/Balder
+	url = git@github.com:Vanaheimr/Balder.git
+[submodule "libs/Aegir"]
+	path = libs/Aegir
+	url = git@github.com:Vanaheimr/Aegir.git
+[submodule "libs/Hermod"]
+	path = libs/Hermod
+	url = git@github.com:Vanaheimr/Hermod.git
