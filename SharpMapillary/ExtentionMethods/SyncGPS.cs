@@ -33,8 +33,9 @@ namespace org.GraphDefined.SharpMapillary
         #region SyncGPS(MapillaryInfos, GPSInterpolation = GPSInterpolation.LinearInterpolation, DirectionOffset = 0.0)
 
         public static IEnumerable<SharpMapillaryInfo> SyncGPS(this IEnumerable<SharpMapillaryInfo>  MapillaryInfos,
-                                                              GPSInterpolation                      GPSInterpolation = GPSInterpolation.LinearInterpolation,
-                                                              Double                                DirectionOffset  = 0.0)
+                                                              GPSInterpolation                      GPSInterpolation  = GPSInterpolation.LinearInterpolation,
+                                                              Double                                DirectionOffset   = 0.0)
+
         {
             return MapillaryInfos.Select(MapillaryInfo => SyncGPS(ref MapillaryInfo, GPSInterpolation, DirectionOffset));
         }
@@ -46,6 +47,7 @@ namespace org.GraphDefined.SharpMapillary
         public static SharpMapillaryInfo SyncGPS(this SharpMapillaryInfo  MapillaryInfo,
                                                  GPSInterpolation         GPSInterpolation  = GPSInterpolation.LinearInterpolation,
                                                  Double                   DirectionOffset   = 0.0)
+
         {
             return SyncGPS(ref MapillaryInfo, GPSInterpolation, DirectionOffset);
         }
@@ -57,6 +59,7 @@ namespace org.GraphDefined.SharpMapillary
         public static SharpMapillaryInfo SyncGPS(ref SharpMapillaryInfo  MapillaryInfo,
                                                  GPSInterpolation        GPSInterpolation  = GPSInterpolation.LinearInterpolation,
                                                  Double                  DirectionOffset   = 0.0)
+
         {
 
             #region Data

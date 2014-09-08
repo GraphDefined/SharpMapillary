@@ -85,6 +85,10 @@ namespace org.GraphDefined.SharpMapillary
 
         }
 
+        public override String ToString()
+        {
+            return String.Concat(Degree, "° ", Minute, "' ", Second, "''");
+        }
 
     }
 

@@ -57,7 +57,7 @@ namespace org.GraphDefined.SharpMapillary
             if (MapillaryInfos == null)
                 throw new ArgumentNullException("MapillaryInfos", "The given enumeration of MapillaryInfos must not be null!");
 
-            return MapillaryInfos.Select(MapillaryInfo => Store(ref MapillaryInfo, SubDirectory, SubDirectoryNoGPS, OnProcessed));
+            return MapillaryInfos.Select(MapillaryInfo => Store(ref MapillaryInfo, SubDirectory, SubDirectoryNoGPS, OnProcessed, ParallelOptions));
 
         }
 
@@ -120,6 +120,7 @@ namespace org.GraphDefined.SharpMapillary
             var newImage                    = new ThreadLocal<Bitmap>();
             var oldImage                    = new ThreadLocal<Bitmap>();
             var g                           = new ThreadLocal<Graphics>();
+            var NewFilePath                 = new ThreadLocal<String>();
 
             var NumberOfJPEGs               = (UInt32) MapillaryInfo.Images.Count;
             var NumberOfJPEGsProcessed      = 0;
@@ -162,25 +163,25 @@ namespace org.GraphDefined.SharpMapillary
                             LatitudeDMS. Value  = ImageInfo.Latitude. Value.ToDMSLat();
                             LongitudeDMS.Value  = ImageInfo.Longitude.Value.ToDMSLng();
 
-                            if (!EXIFFile.Value.Properties.ContainsKey(ExifTag.GPSLatitude))
+                            //if (!EXIFFile.Value.Properties.ContainsKey(ExifTag.GPSLatitude))
                                 EXIFFile.Value.Properties.Set(ExifTag.GPSLatitude, LatitudeDMS.Value.Degree, LatitudeDMS.Value.Minute, LatitudeDMS.Value.Second);
 
                             if (!EXIFFile.Value.Properties.ContainsKey(ExifTag.GPSLatitudeRef))
                                 EXIFFile.Value.Properties.Set(ExifTag.GPSLatitudeRef, ImageInfo.Latitude > 0 ? GPSLatitudeRef.North : GPSLatitudeRef.South);
 
-                            if (!EXIFFile.Value.Properties.ContainsKey(ExifTag.GPSLongitude))
+                            //if (!EXIFFile.Value.Properties.ContainsKey(ExifTag.GPSLongitude))
                                 EXIFFile.Value.Properties.Set(ExifTag.GPSLongitude, LongitudeDMS.Value.Degree, LongitudeDMS.Value.Minute, LongitudeDMS.Value.Second);
 
                             if (!EXIFFile.Value.Properties.ContainsKey(ExifTag.GPSLongitudeRef))
                                 EXIFFile.Value.Properties.Set(ExifTag.GPSLongitudeRef, ImageInfo.Longitude > 0 ? GPSLongitudeRef.East : GPSLongitudeRef.West);
 
-                            if (!EXIFFile.Value.Properties.ContainsKey(ExifTag.GPSAltitude))
+                            //if (!EXIFFile.Value.Properties.ContainsKey(ExifTag.GPSAltitude))
                                 EXIFFile.Value.Properties.Set(ExifTag.GPSAltitude, ImageInfo.Altitude.Value);
 
                             if (!EXIFFile.Value.Properties.ContainsKey(ExifTag.GPSAltitudeRef))
                                 EXIFFile.Value.Properties.Set(ExifTag.GPSAltitudeRef, GPSAltitudeRef.AboveSeaLevel);
 
-                            if (!EXIFFile.Value.Properties.ContainsKey(ExifTag.GPSImgDirection))
+                            //if (!EXIFFile.Value.Properties.ContainsKey(ExifTag.GPSImgDirection))
                                 EXIFFile.Value.Properties.Add(new ExifURational(ExifTag.GPSImgDirection, new MathEx.UFraction32(ImageInfo.ViewingDirection)));
 
 
@@ -281,11 +282,16 @@ namespace org.GraphDefined.SharpMapillary
 
                             #region Store resized image on disc...
 
-                            newImage.Value.Save(String.Concat(_MapillaryInfo.FilePath,
+                            // Generate new file name including a possible subdirectory...
+                            NewFilePath.Value = String.Concat(_MapillaryInfo.FilePath,
                                                               Path.DirectorySeparatorChar,
                                                               SubDirectory,
-                                                              Path.DirectorySeparatorChar,
-                                                              ImageInfo.FileName.Remove(0, ImageInfo.FileName.LastIndexOf(Path.DirectorySeparatorChar) + 1)),
+                                                              ImageInfo.FileName.Replace(_MapillaryInfo.FilePath, ""));
+
+                            // Check if the possible subdirectory already exists... or create it!
+                            Directory.CreateDirectory(NewFilePath.Value.Substring(0, NewFilePath.Value.LastIndexOf(Path.DirectorySeparatorChar)));
+
+                            newImage.Value.Save(NewFilePath.Value,
                                                 ImageFormat.Jpeg);
 
                             newImage.Value.Dispose();

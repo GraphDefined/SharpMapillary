@@ -32,31 +32,40 @@ namespace org.GraphDefined.SharpMapillary
     public static partial class SharpMapillary
     {
 
-        #region LoadGPXs(this Path, OnDupliateTimestamp = null)
+        #region LoadGPXs(this Path, TimeOffset = null, OnDupliateTimestamp = null, OnResult = null)
 
         public static SharpMapillaryInfo LoadGPXs(this String                                       Path,
-                                                  Action<String, DateTime, Double, Double, Double>  OnDupliateTimestamp = null)
+                                                  Int32?                                            TimeOffset           = null,
+                                                  Action<String, DateTime, Double, Double, Double>  OnDupliateTimestamp  = null,
+                                                  Action<DateTime, DateTime, DateTimeKind>          OnResult             = null)
+
         {
-            return LoadGPXs(Path, null, OnDupliateTimestamp);
+            return LoadGPXs(Path, null, TimeOffset, OnDupliateTimestamp, OnResult);
         }
 
         #endregion
 
-        #region LoadGPXs(this MapillaryInfo, OnDupliateTimestamp = null)
+        #region LoadGPXs(this MapillaryInfo, TimeOffset = null, OnDupliateTimestamp = null, OnResult = null)
 
         public static SharpMapillaryInfo LoadGPXs(this SharpMapillaryInfo                           MapillaryInfo,
-                                                  Action<String, DateTime, Double, Double, Double>  OnDupliateTimestamp = null)
+                                                  Int32?                                            TimeOffset           = null,
+                                                  Action<String, DateTime, Double, Double, Double>  OnDupliateTimestamp  = null,
+                                                  Action<DateTime, DateTime, DateTimeKind>          OnResult             = null)
+
         {
-            return LoadGPXs(MapillaryInfo.FilePath, MapillaryInfo, OnDupliateTimestamp);
+            return LoadGPXs(MapillaryInfo.FilePath, MapillaryInfo, TimeOffset, OnDupliateTimestamp, OnResult);
         }
 
         #endregion
 
-        #region LoadGPXs(Path, MapillaryInfo = null, OnDupliateTimestamp = null)
+        #region LoadGPXs(Path, MapillaryInfo = null, TimeOffset = null, OnDupliateTimestamp = null, OnResult = null)
 
         public static SharpMapillaryInfo LoadGPXs(String                                            Path,
                                                   SharpMapillaryInfo                                MapillaryInfo        = null,
-                                                  Action<String, DateTime, Double, Double, Double>  OnDupliateTimestamp  = null)
+                                                  Int32?                                            TimeOffset           = null,
+                                                  Action<String, DateTime, Double, Double, Double>  OnDupliateTimestamp  = null,
+                                                  Action<DateTime, DateTime, DateTimeKind>          OnResult             = null)
+
         {
 
             #region Initial checks...
@@ -67,7 +76,7 @@ namespace org.GraphDefined.SharpMapillary
             #endregion
 
             foreach (var GPXFile in Directory.EnumerateFiles(Path, "*.gpx"))
-                LoadGPX(GPXFile, ref MapillaryInfo, OnDupliateTimestamp);
+                LoadGPX(GPXFile, ref MapillaryInfo, TimeOffset, OnDupliateTimestamp, OnResult);
 
             return MapillaryInfo;
 
@@ -75,57 +84,72 @@ namespace org.GraphDefined.SharpMapillary
 
         #endregion
 
-        #region LoadGPXs(this Paths, OnDupliateTimestamp = null)
+        #region LoadGPXs(this Paths, TimeOffset = null, OnDupliateTimestamp = null, OnResult = null)
 
         public static IEnumerable<SharpMapillaryInfo> LoadGPXs(this IEnumerable<String>                          Paths,
-                                                               Action<String, DateTime, Double, Double, Double>  OnDupliateTimestamp = null)
+                                                               Int32?                                            TimeOffset           = null,
+                                                               Action<String, DateTime, Double, Double, Double>  OnDupliateTimestamp  = null,
+                                                               Action<DateTime, DateTime, DateTimeKind>          OnResult             = null)
+
         {
-            return Paths.Select(v => LoadGPXs(v, null, OnDupliateTimestamp));
+            return Paths.Select(v => LoadGPXs(v, null, TimeOffset, OnDupliateTimestamp, OnResult));
         }
 
         #endregion
 
-        #region LoadGPXs(this MapillaryInfos, OnDupliateTimestamp = null)
+        #region LoadGPXs(this MapillaryInfos, TimeOffset = null, OnDupliateTimestamp = null, OnResult = null)
 
         public static IEnumerable<SharpMapillaryInfo> LoadGPXs(this IEnumerable<SharpMapillaryInfo>              MapillaryInfos,
-                                                               Action<String, DateTime, Double, Double, Double>  OnDupliateTimestamp = null)
+                                                               Int32?                                            TimeOffset           = null,
+                                                               Action<String, DateTime, Double, Double, Double>  OnDupliateTimestamp  = null,
+                                                               Action<DateTime, DateTime, DateTimeKind>          OnResult             = null)
+
         {
-            return MapillaryInfos.Select(v => LoadGPXs(v.FilePath, v, OnDupliateTimestamp));
+            return MapillaryInfos.Select(v => LoadGPXs(v.FilePath, v, TimeOffset, OnDupliateTimestamp, OnResult));
         }
 
         #endregion
 
 
-        #region LoadGPX(this GPXFile, OnDupliateTimestamp = null)
+        #region LoadGPX(this GPXFile, TimeOffset = null, OnDupliateTimestamp = null, OnResult = null)
 
         public static SharpMapillaryInfo LoadGPX(this String                                       GPXFile,
-                                                 Action<String, DateTime, Double, Double, Double>  OnDupliateTimestamp = null)
+                                                 Int32?                                            TimeOffset           = null,
+                                                 Action<String, DateTime, Double, Double, Double>  OnDupliateTimestamp  = null,
+                                                 Action<DateTime, DateTime, DateTimeKind>          OnResult             = null)
+
         {
 
             var Mapillary = new SharpMapillaryInfo(GPXFile.Substring(0, GPXFile.LastIndexOf(Path.DirectorySeparatorChar)));
 
-            return LoadGPX(GPXFile, ref Mapillary, OnDupliateTimestamp);
+            return LoadGPX(GPXFile, ref Mapillary, TimeOffset, OnDupliateTimestamp, OnResult);
 
         }
 
         #endregion
 
-        #region LoadGPX(this MapillaryInfo, GPXFile, OnDupliateTimestamp = null)
+        #region LoadGPX(this MapillaryInfo, GPXFile, TimeOffset = null, OnDupliateTimestamp = null, OnResult = null)
 
         public static SharpMapillaryInfo LoadGPX(this SharpMapillaryInfo                           MapillaryInfo,
                                                  String                                            GPXFile,
-                                                 Action<String, DateTime, Double, Double, Double>  OnDupliateTimestamp = null)
+                                                 Int32?                                            TimeOffset           = null,
+                                                 Action<String, DateTime, Double, Double, Double>  OnDupliateTimestamp  = null,
+                                                 Action<DateTime, DateTime, DateTimeKind>          OnResult             = null)
+
         {
-            return LoadGPX(GPXFile, ref MapillaryInfo, OnDupliateTimestamp);
+            return LoadGPX(GPXFile, ref MapillaryInfo, TimeOffset, OnDupliateTimestamp, OnResult);
         }
 
         #endregion
 
-        #region LoadGPX(GPXFile, ref MapillaryInfo, OnDupliateTimestamp = null)
+        #region LoadGPX(GPXFile, ref MapillaryInfo, TimeOffset = null, OnDupliateTimestamp = null, OnResult = null)
 
         public static SharpMapillaryInfo LoadGPX(String                                            GPXFile,
                                                  ref SharpMapillaryInfo                            MapillaryInfo,
-                                                 Action<String, DateTime, Double, Double, Double>  OnDupliateTimestamp = null)
+                                                 Int32?                                            TimeOffset           = null,
+                                                 Action<String, DateTime, Double, Double, Double>  OnDupliateTimestamp  = null,
+                                                 Action<DateTime, DateTime, DateTimeKind>          OnResult             = null)
+
         {
 
             #region GPX XML docu...
@@ -172,6 +196,9 @@ namespace org.GraphDefined.SharpMapillary
             Double          Longitude;
             Double          Altitude;
 
+            var MinDateTime = DateTime.MaxValue;
+            var MaxDateTime = DateTime.MinValue;
+
             #endregion
 
             try
@@ -186,6 +213,21 @@ namespace org.GraphDefined.SharpMapillary
                 {
 
                     Timestamp  = DateTime.Parse(GPSTrackPoint.Element(NS + "time").Value).ToUniversalTime();
+
+                    if (TimeOffset.HasValue)
+                    {
+                        if (TimeOffset.Value > 0)
+                            Timestamp += TimeSpan.FromSeconds(TimeOffset.Value);
+                        else
+                            Timestamp -= TimeSpan.FromSeconds(-TimeOffset.Value);
+                    }
+
+                    if (Timestamp < MinDateTime)
+                        MinDateTime = Timestamp;
+
+                    if (Timestamp > MaxDateTime)
+                        MaxDateTime = Timestamp;
+
                     Latitude   = Double.  Parse(GPSTrackPoint.Attribute("lat").Value,    CultureInfo.InvariantCulture);
                     Longitude  = Double.  Parse(GPSTrackPoint.Attribute("lon").Value,    CultureInfo.InvariantCulture);
                     Altitude   = Double.  Parse(GPSTrackPoint.Element(NS + "ele").Value, CultureInfo.InvariantCulture);
@@ -215,6 +257,9 @@ namespace org.GraphDefined.SharpMapillary
             {
                 Console.WriteLine("There is something wrong in file: " + GPXFile + Environment.NewLine + e.Message);
             }
+
+            if (OnResult != null)
+                OnResult(MinDateTime, MaxDateTime, MinDateTime.Kind);
 
             return MapillaryInfo;
 

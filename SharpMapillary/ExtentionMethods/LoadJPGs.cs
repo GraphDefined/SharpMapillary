@@ -38,37 +38,52 @@ namespace org.GraphDefined.SharpMapillary
 
         private static readonly Object SharpMapillaryLock = new Object();
 
-        #region LoadJPEGs(this Path, TimeOffset = null, OnProcessed = null, OnDupliateTimestamp = null)
+        #region LoadJPEGs(this Path, SearchOption = SearchOption.TopDirectoryOnly, DateTimeType = DateTimeKind.Utc, TimeOffset = null, OnProcessed = null, OnDupliateTimestamp = null, ParallelOptions = null, OnResult = null)
 
-        public static SharpMapillaryInfo LoadJPEGs(this String                     Path,
-                                                   Int32?                          TimeOffset           = null,
-                                                   Action<UInt32, UInt32, Double>  OnProcessed          = null,
-                                                   Action<String, DateTime>        OnDupliateTimestamp  = null)
+        public static SharpMapillaryInfo LoadJPEGs(this String                               Path,
+                                                   SearchOption                              SearchOption         = SearchOption.TopDirectoryOnly,
+                                                   DateTimeKind                              DateTimeType         = DateTimeKind.Utc,
+                                                   Int32?                                    TimeOffset           = null,
+                                                   Action<UInt32, UInt32, Double>            OnProcessed          = null,
+                                                   Action<String, DateTime>                  OnDupliateTimestamp  = null,
+                                                   ParallelOptions                           ParallelOptions      = null,
+                                                   Action<DateTime, DateTime, DateTimeKind>  OnResult             = null)
+
         {
-            return LoadJPEGs(Path, null, TimeOffset, OnProcessed, OnDupliateTimestamp);
+            return LoadJPEGs(Path, SearchOption, null, DateTimeType, TimeOffset, OnProcessed, OnDupliateTimestamp, ParallelOptions, OnResult);
         }
 
         #endregion
 
-        #region LoadJPEGs(this MapillaryInfo, TimeOffset = null, OnProcessed = null, OnDupliateTimestamp = null)
+        #region LoadJPEGs(this MapillaryInfo, SearchOption = SearchOption.TopDirectoryOnly, DateTimeType = DateTimeKind.Utc, TimeOffset = null, OnProcessed = null, OnDupliateTimestamp = null, ParallelOptions = null, OnResult = null)
 
-        public static SharpMapillaryInfo LoadJPEGs(this SharpMapillaryInfo         MapillaryInfo,
-                                                   Int32?                          TimeOffset           = null,
-                                                   Action<UInt32, UInt32, Double>  OnProcessed          = null,
-                                                   Action<String, DateTime>        OnDupliateTimestamp  = null)
+        public static SharpMapillaryInfo LoadJPEGs(this SharpMapillaryInfo                   MapillaryInfo,
+                                                   SearchOption                              SearchOption         = SearchOption.TopDirectoryOnly,
+                                                   DateTimeKind                              DateTimeType         = DateTimeKind.Utc,
+                                                   Int32?                                    TimeOffset           = null,
+                                                   Action<UInt32, UInt32, Double>            OnProcessed          = null,
+                                                   Action<String, DateTime>                  OnDupliateTimestamp  = null,
+                                                   ParallelOptions                           ParallelOptions      = null,
+                                                   Action<DateTime, DateTime, DateTimeKind>  OnResult             = null)
+
         {
-            return LoadJPEGs(MapillaryInfo.FilePath, MapillaryInfo, TimeOffset, OnProcessed, OnDupliateTimestamp);
+            return LoadJPEGs(MapillaryInfo.FilePath, SearchOption, MapillaryInfo, DateTimeType, TimeOffset, OnProcessed, OnDupliateTimestamp, ParallelOptions, OnResult);
         }
 
         #endregion
 
-        #region LoadJPEGs(Path, MapillaryInfo = null, TimeOffset = null, OnProcessed = null, OnDupliateTimestamp = null)
+        #region LoadJPEGs(Path, SearchOption = SearchOption.TopDirectoryOnly, MapillaryInfo = null, DateTimeType = DateTimeKind.Utc, TimeOffset = null, OnProcessed = null, OnDupliateTimestamp = null, ParallelOptions = null, OnResult = null)
 
-        public static SharpMapillaryInfo LoadJPEGs(String                          Path,
-                                                   SharpMapillaryInfo              MapillaryInfo        = null,
-                                                   Int32?                          TimeOffset           = null,
-                                                   Action<UInt32, UInt32, Double>  OnProcessed          = null,
-                                                   Action<String, DateTime>        OnDupliateTimestamp  = null)
+        public static SharpMapillaryInfo LoadJPEGs(String                                    Path,
+                                                   SearchOption                              SearchOption         = SearchOption.TopDirectoryOnly,
+                                                   SharpMapillaryInfo                        MapillaryInfo        = null,
+                                                   DateTimeKind                              DateTimeType         = DateTimeKind.Utc,
+                                                   Int32?                                    TimeOffset           = null,
+                                                   Action<UInt32, UInt32, Double>            OnProcessed          = null,
+                                                   Action<String, DateTime>                  OnDupliateTimestamp  = null,
+                                                   ParallelOptions                           ParallelOptions      = null,
+                                                   Action<DateTime, DateTime, DateTimeKind>  OnResult             = null)
+
         {
 
             #region Initial checks...
@@ -78,14 +93,23 @@ namespace org.GraphDefined.SharpMapillary
 
             #endregion
 
-            var AllJPEGs                = Directory.EnumerateFiles(Path, "*.JPG").ToArray();
+            #region Init...
+
+            var AllJPEGs                = Directory.EnumerateFiles(Path, "*.JPG", SearchOption).ToArray();
             var NumberOfJPEGsFound      = (UInt32) AllJPEGs.Length;
             var NumberOfJPEGsProcessed  = 0;
             var OnProcessedLocal        = OnProcessed;
 
-            Parallel.ForEach(AllJPEGs, JPEGFile => {
+            var MinDateTime             = DateTime.MaxValue;
+            var MaxDateTime             = DateTime.MinValue;
 
-                LoadJPEG(JPEGFile, ref MapillaryInfo, TimeOffset, OnDupliateTimestamp);
+            #endregion
+
+            Parallel.ForEach(AllJPEGs,
+                             ParallelOptions != null ? ParallelOptions : new ParallelOptions() { MaxDegreeOfParallelism = 8 },
+                             JPEGFile => {
+
+                LoadJPEG(JPEGFile, ref MapillaryInfo, DateTimeType, TimeOffset, OnDupliateTimestamp);
                 Interlocked.Increment(ref NumberOfJPEGsProcessed);
 
                 OnProcessedLocal = OnProcessed;
@@ -94,68 +118,105 @@ namespace org.GraphDefined.SharpMapillary
 
             });
 
+            #region Process OnResult-delegate...
+
+            if (OnResult != null)
+            {
+
+                foreach (var ImageInfo in MapillaryInfo.Images.Values)
+                {
+
+                    if (ImageInfo.Timestamp.Value < MinDateTime)
+                        MinDateTime = ImageInfo.Timestamp.Value;
+
+                    if (ImageInfo.Timestamp.Value > MaxDateTime)
+                        MaxDateTime = ImageInfo.Timestamp.Value;
+
+                }
+
+                OnResult(MinDateTime, MaxDateTime, MinDateTime.Kind);
+
+            }
+
+            #endregion
+
             return MapillaryInfo;
 
         }
 
         #endregion
 
-        #region LoadJPEGs(this Paths, TimeOffset = null, OnProcessed = null, OnDupliateTimestamp = null)
+        #region LoadJPEGs(this Paths, SearchOption = SearchOption.TopDirectoryOnly, DateTimeType = DateTimeKind.Utc, TimeOffset = null, OnProcessed = null, OnDupliateTimestamp = null, ParallelOptions = null, OnResult = null)
 
-        public static IEnumerable<SharpMapillaryInfo> LoadJPEGs(this IEnumerable<String>        Paths,
-                                                                Int32?                          TimeOffset           = null,
-                                                                Action<UInt32, UInt32, Double>  OnProcessed          = null,
-                                                                Action<String, DateTime>        OnDupliateTimestamp  = null)
+        public static IEnumerable<SharpMapillaryInfo> LoadJPEGs(this IEnumerable<String>                  Paths,
+                                                                SearchOption                              SearchOption         = SearchOption.TopDirectoryOnly,
+                                                                DateTimeKind                              DateTimeType         = DateTimeKind.Utc,
+                                                                Int32?                                    TimeOffset           = null,
+                                                                Action<UInt32, UInt32, Double>            OnProcessed          = null,
+                                                                Action<String, DateTime>                  OnDupliateTimestamp  = null,
+                                                                ParallelOptions                           ParallelOptions      = null,
+                                                                Action<DateTime, DateTime, DateTimeKind>  OnResult             = null)
+
         {
-            return Paths.Select(MapillaryInfo => LoadJPEGs(MapillaryInfo, null, TimeOffset, OnProcessed, OnDupliateTimestamp));
+            return Paths.Select(MapillaryInfo => LoadJPEGs(MapillaryInfo, SearchOption, null, DateTimeType, TimeOffset, OnProcessed, OnDupliateTimestamp, ParallelOptions, OnResult));
         }
 
         #endregion
 
-        #region LoadJPEGs(this MapillaryInfos, TimeOffset = null, OnProcessed = null, OnDupliateTimestamp = null)
+        #region LoadJPEGs(this MapillaryInfos, SearchOption = SearchOption.TopDirectoryOnly, DateTimeType = DateTimeKind.Utc, TimeOffset = null, OnProcessed = null, OnDupliateTimestamp = null, ParallelOptions = null, OnResult = null)
 
-        public static IEnumerable<SharpMapillaryInfo> LoadJPEGs(this IEnumerable<SharpMapillaryInfo>  MapillaryInfos,
-                                                                Int32?                                TimeOffset           = null,
-                                                                Action<UInt32, UInt32, Double>        OnProcessed          = null,
-                                                                Action<String, DateTime>              OnDupliateTimestamp  = null)
+        public static IEnumerable<SharpMapillaryInfo> LoadJPEGs(this IEnumerable<SharpMapillaryInfo>      MapillaryInfos,
+                                                                SearchOption                              SearchOption         = SearchOption.TopDirectoryOnly,
+                                                                DateTimeKind                              DateTimeType         = DateTimeKind.Utc,
+                                                                Int32?                                    TimeOffset           = null,
+                                                                Action<UInt32, UInt32, Double>            OnProcessed          = null,
+                                                                Action<String, DateTime>                  OnDupliateTimestamp  = null,
+                                                                ParallelOptions                           ParallelOptions      = null,
+                                                                Action<DateTime, DateTime, DateTimeKind>  OnResult             = null)
+
         {
-            return MapillaryInfos.Select(MapillaryInfo => LoadJPEGs(MapillaryInfo.FilePath, MapillaryInfo, TimeOffset, OnProcessed, OnDupliateTimestamp));
+            return MapillaryInfos.Select(MapillaryInfo => LoadJPEGs(MapillaryInfo.FilePath, SearchOption, MapillaryInfo, DateTimeType, TimeOffset, OnProcessed, OnDupliateTimestamp, ParallelOptions, OnResult));
         }
 
         #endregion
 
 
-        #region LoadJPEG(this JPEGFile, TimeOffset = null, OnDupliateTimestamp = null)
+        #region LoadJPEG(this JPEGFile, DateTimeType = DateTimeKind.Utc, TimeOffset = null, OnDupliateTimestamp = null)
 
         public static SharpMapillaryInfo LoadJPEG(this String               JPEGFile,
+                                                  DateTimeKind              DateTimeType         = DateTimeKind.Utc,
                                                   Int32?                    TimeOffset           = null,
                                                   Action<String, DateTime>  OnDupliateTimestamp  = null)
+
         {
 
             var Mapillary = new SharpMapillaryInfo(JPEGFile.Substring(0, JPEGFile.LastIndexOf(Path.DirectorySeparatorChar)));
 
-            return LoadJPEG(JPEGFile, ref Mapillary, TimeOffset, OnDupliateTimestamp);
+            return LoadJPEG(JPEGFile, ref Mapillary, DateTimeType, TimeOffset, OnDupliateTimestamp);
 
         }
 
         #endregion
 
-        #region LoadJPEG(this MapillaryInfo, JPEGFile, TimeOffset = null, OnDupliateTimestamp = null)
+        #region LoadJPEG(this MapillaryInfo, JPEGFile, DateTimeType = DateTimeKind.Utc, TimeOffset = null, OnDupliateTimestamp = null)
 
         public static SharpMapillaryInfo LoadJPEG(this SharpMapillaryInfo   MapillaryInfo,
                                                   String                    JPEGFile,
+                                                  DateTimeKind              DateTimeType         = DateTimeKind.Utc,
                                                   Int32?                    TimeOffset           = null,
                                                   Action<String, DateTime>  OnDupliateTimestamp  = null)
+
         {
-            return LoadJPEG(JPEGFile, ref MapillaryInfo, TimeOffset, OnDupliateTimestamp);
+            return LoadJPEG(JPEGFile, ref MapillaryInfo, DateTimeType, TimeOffset, OnDupliateTimestamp);
         }
 
         #endregion
 
-        #region LoadJPEG(JPEGFile, ref MapillaryInfo, TimeOffset = null, OnDupliateTimestamp = null)
+        #region LoadJPEG(JPEGFile, ref MapillaryInfo, DateTimeType = DateTimeKind.Utc, TimeOffset = null, OnDupliateTimestamp = null)
 
         public static SharpMapillaryInfo LoadJPEG(String                    JPEGFile,
                                                   ref SharpMapillaryInfo    MapillaryInfo,
+                                                  DateTimeKind              DateTimeType         = DateTimeKind.Utc,
                                                   Int32?                    TimeOffset           = null,
                                                   Action<String, DateTime>  OnDupliateTimestamp  = null)
 
@@ -192,6 +253,8 @@ namespace org.GraphDefined.SharpMapillary
 
             #endregion
 
+            DateTimeType = DateTimeKind.Local;
+
             try
             {
 
@@ -200,7 +263,7 @@ namespace org.GraphDefined.SharpMapillary
                 if (EXIFFile.Properties.ContainsKey(ExifTag.DateTime))
                 {
 
-                    Timestamp = DateTime.SpecifyKind((DateTime) EXIFFile.Properties[ExifTag.DateTime].Value, DateTimeKind.Utc);
+                    Timestamp = DateTime.SpecifyKind((DateTime) EXIFFile.Properties[ExifTag.DateTime].Value, DateTimeType).ToUniversalTime();
 
                     if (TimeOffset.HasValue)
                     {
