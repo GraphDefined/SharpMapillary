@@ -34,8 +34,8 @@ using System.Windows.Media.Imaging;
 using System.Windows.Navigation;
 using System.Windows.Shapes;
 
-using eu.Vanaheimr.Aegir;
-using eu.Vanaheimr.Aegir.Tiles;
+using org.GraphDefined.Vanaheimr.Aegir;
+using org.GraphDefined.Vanaheimr.Aegir.Tiles;
 
 #endregion
 

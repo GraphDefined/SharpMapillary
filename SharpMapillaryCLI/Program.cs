@@ -108,32 +108,32 @@ namespace org.GraphDefined.SharpMapillary
 
             SharpMapillary.Start(StartDirectory).
 
-                                 LoadGPXs(OnDupliateTimestamp: (GPXFile, Timestamp, lat, lng, alt) => Console.WriteLine("Duplicate GPS timestamp: " + Timestamp.ToUniversalTime().ToString("s") + "Z" + " in GPX file: " + GPXFile),
-                                          OnResult: (Min, Max, Kind) => Console.WriteLine("Min/Max GPS timestamps: " + Min.ToLocalTime().ToString("s") + " / " + Max.ToLocalTime().ToString("s") + " - " + Kind.ToString()),
-                                          TimeOffset: -7200).   // RunKeeper seems to have a timezone bug currently!
-                                 Do(v => Console.WriteLine("Number of GPS trackpoints: " +           v.NumberOfGPSPoints)).
-                                 Do(v => Console.WriteLine("Number of duplicate GPS timestamps: " +  v.NumberOfDuplicateGPSTimestamps)).
+                LoadGPXs(OnDupliateTimestamp: (GPXFile, Timestamp, lat, lng, alt) => Console.WriteLine("Duplicate GPS timestamp: " + Timestamp.ToUniversalTime().ToString("s") + "Z" + " in GPX file: " + GPXFile),
+                         OnResult: (Min, Max, Kind) => Console.WriteLine("Min/Max GPS timestamps: " + Min.ToLocalTime().ToString("s") + " / " + Max.ToLocalTime().ToString("s") + " - " + Kind.ToString()),
+                         TimeOffset: 0).//-7200).//-14400).   // RunKeeper seems to have a timezone bug currently!
+                Do(v => Console.WriteLine("Number of GPS trackpoints: " +           v.NumberOfGPSPoints)).
+                Do(v => Console.WriteLine("Number of duplicate GPS timestamps: " +  v.NumberOfDuplicateGPSTimestamps)).
 
-                                 LoadJPEGs(OnProcessed:         (Sum, Processed, Percentage)       => { if (Processed % 25 == 0) { Console.Write(Percentage.ToString("0.00") + "% of " + Sum + " images loaded..."); Console.CursorLeft = 0; } },
-                                           OnDupliateTimestamp: (JPEGFile, Timestamp)              => Console.WriteLine("Duplicate EXIF timestamp: " + Timestamp.ToUniversalTime().ToString("s") + "Z" + " in image file: " + JPEGFile),
-                                           DateTimeType:        DateTimeKind.Local,     // GoPro Hero 3+ image EXIF use the local time zone
-                                           ParallelOptions:     new ParallelOptions() { MaxDegreeOfParallelism = 16 },
-                                           OnResult:            (Min, Max, Kind)                   => Console.WriteLine("Min/Max EXIF timestamps: " + Min.ToLocalTime().ToString("s") + " / " + Max.ToLocalTime().ToString("s") + " - " + Kind.ToString())).
-                                           //TimeOffset: 7200).
-                                           //TimeOffset: 52).   // Ziegenhain2:
-                                           //TimeOffset: 44).   // Jena-Ost3
-                                 Do(v => Console.WriteLine(Environment.NewLine +
-                                                           "Number of duplicate EXIF timestamps: " + v.NumberOfDuplicateEXIFTimestamps)).
+                LoadJPEGs(OnProcessed:         (Sum, Processed, Percentage)       => { if (Processed % 25 == 0) { Console.Write(Percentage.ToString("0.00") + "% of " + Sum + " images loaded..."); Console.CursorLeft = 0; } },
+                          OnDupliateTimestamp: (JPEGFile, Timestamp)              => Console.WriteLine("Duplicate EXIF timestamp: " + Timestamp.ToUniversalTime().ToString("s") + "Z" + " in image file: " + JPEGFile),
+                          DateTimeType:        DateTimeKind.Local,     // GoPro Hero 3+ image EXIF use the local time zone
+                          ParallelOptions:     new ParallelOptions() { MaxDegreeOfParallelism = 16 },
+                          OnResult:            (Min, Max, Kind)                   => Console.WriteLine("Min/Max EXIF timestamps: " + Min.ToLocalTime().ToString("s") + " / " + Max.ToLocalTime().ToString("s") + " - " + Kind.ToString())).
+                          //TimeOffset: 7200).
+                          //TimeOffset: 52).   // Ziegenhain2:
+                          //TimeOffset: 44).   // Jena-Ost3
+                Do(v => Console.WriteLine(Environment.NewLine +
+                                          "Number of duplicate EXIF timestamps: " + v.NumberOfDuplicateEXIFTimestamps)).
 
-                                 SyncGPS().
-                                 Do(v => Console.WriteLine("Number of images w/o GPS: " +            v.NumberOfImagesWithoutGPS)).
+                SyncGPS().
+                Do(v => Console.WriteLine("Number of images w/o GPS: " +            v.NumberOfImagesWithoutGPS)).
 
-                                 ResizeImages(2000, 1500).
+                ResizeImages(2000, 1500).
 
-                                 Store(SubDirectory:       "fixed",
-                                       SubDirectoryNoGPS:  "noGPS",
-                                       OnProcessed:        (Sum, Processed, Percentage) => { if (Processed % 25 == 0) { Console.Write(Percentage.ToString("0.00") + "% of " + Sum + " images stored..."); Console.CursorLeft = 0; } },
-                                       ParallelOptions:    ParallelWriteOptions).
+                Store(SubDirectory:       "fixed",
+                      SubDirectoryNoGPS:  "noGPS",
+                      OnProcessed:        (Sum, Processed, Percentage) => { if (Processed % 25 == 0) { Console.Write(Percentage.ToString("0.00") + "% of " + Sum + " images stored..."); Console.CursorLeft = 0; } },
+                      ParallelOptions:    ParallelWriteOptions).
 
                                  ToArray();
 

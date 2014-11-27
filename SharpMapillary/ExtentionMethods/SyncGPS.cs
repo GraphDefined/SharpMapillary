@@ -98,6 +98,18 @@ namespace org.GraphDefined.SharpMapillary
                     //var GPXIndex               = GPXList.BinarySearch(timestamp);
                     //LateTimestamp              = (GPXIndex >= 0) ? GPXArray[GPXIndex] : GPXArray[-GPXIndex - 1]; // Returns the next timestamp if no exact match was found!
 
+                    if (GPSEarly == null)
+                    {
+                        Console.WriteLine("Could not find a GPSEarly timestamp!");
+                        Environment.Exit(1);
+                    }
+
+                    if (GPSLate == null)
+                    {
+                        Console.WriteLine("Could not find a GPSLate timestamp!");
+                        Environment.Exit(1);
+                    }
+
                     // Ignore GPS-less images without GPS coordinates
                     // before and after the image was taken!
                     if (GPSEarly != null && GPSLate != null)
