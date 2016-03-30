@@ -1,5 +1,5 @@
 ﻿<?xml version="1.0" encoding="utf-8"?>
-<Project ToolsVersion="4.0" DefaultTargets="Build" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+<Project ToolsVersion="12.0" DefaultTargets="Build" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
   <Import Project="$(MSBuildExtensionsPath)\$(MSBuildToolsVersion)\Microsoft.Common.props" Condition="Exists('$(MSBuildExtensionsPath)\$(MSBuildToolsVersion)\Microsoft.Common.props')" />
   <PropertyGroup>
     <Configuration Condition=" '$(Configuration)' == '' ">Debug</Configuration>
@@ -9,7 +9,7 @@
     <AppDesignerFolder>Properties</AppDesignerFolder>
     <RootNamespace>org.GraphDefined.SharpMapillary.WPF</RootNamespace>
     <AssemblyName>org.GraphDefined.SharpMapillaryWPF</AssemblyName>
-    <TargetFrameworkVersion>v4.5</TargetFrameworkVersion>
+    <TargetFrameworkVersion>v4.6.1</TargetFrameworkVersion>
     <FileAlignment>512</FileAlignment>
     <ProjectTypeGuids>{60dc8134-eba5-43b8-bcc9-bb4bc16c2548};{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}</ProjectTypeGuids>
     <WarningLevel>4</WarningLevel>
@@ -28,6 +28,7 @@
     <IsWebBootstrapper>false</IsWebBootstrapper>
     <UseApplicationTrust>false</UseApplicationTrust>
     <BootstrapperEnabled>true</BootstrapperEnabled>
+    <TargetFrameworkProfile />
   </PropertyGroup>
   <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Debug|AnyCPU' ">
     <PlatformTarget>AnyCPU</PlatformTarget>
@@ -132,18 +133,6 @@
       <Project>{4d8ffccd-738d-41aa-a527-8cfdfe0a681d}</Project>
       <Name>Aegir</Name>
     </ProjectReference>
-    <ProjectReference Include="..\libs\Balder\BalderGraphs\BalderGraphs.csproj">
-      <Project>{562ac94f-60ea-4911-8c62-684f02867783}</Project>
-      <Name>BalderGraphs</Name>
-    </ProjectReference>
-    <ProjectReference Include="..\libs\Balder\Balder\Balder.csproj">
-      <Project>{d2b4e7c7-0524-4de5-9d62-2de05682a74d}</Project>
-      <Name>Balder</Name>
-    </ProjectReference>
-    <ProjectReference Include="..\libs\Eunomia\Eunomia\Eunomia.csproj">
-      <Project>{1df1a588-33b1-4168-9487-604fe5680681}</Project>
-      <Name>Eunomia</Name>
-    </ProjectReference>
     <ProjectReference Include="..\libs\ExifTools\ExifLibrary\ExifLibrary.csproj">
       <Project>{c29ba585-e27b-4ad0-9ad1-490b5e0e2a5e}</Project>
       <Name>ExifLibrary</Name>
@@ -151,22 +140,6 @@
     <ProjectReference Include="..\libs\Hermod\Hermod\Hermod.csproj">
       <Project>{477efd16-3627-4473-957d-44ca9a9dfb79}</Project>
       <Name>Hermod</Name>
-    </ProjectReference>
-    <ProjectReference Include="..\libs\Illias\Illias.NET4.5\Illias.NET4.5.csproj">
-      <Project>{23d37453-2d4e-4bd8-b40f-3e731fee7712}</Project>
-      <Name>Illias.NET4.5</Name>
-    </ProjectReference>
-    <ProjectReference Include="..\libs\Illias\Illias\Illias.csproj">
-      <Project>{e156f18d-d41c-4529-9bcc-9962e6ee25da}</Project>
-      <Name>Illias</Name>
-    </ProjectReference>
-    <ProjectReference Include="..\libs\Styx\Styx.NET4.5\Styx.NET4.5.csproj">
-      <Project>{af76ecc0-2ca5-4cff-9e1e-ff5478c4b6e4}</Project>
-      <Name>Styx.NET4.5</Name>
-    </ProjectReference>
-    <ProjectReference Include="..\libs\Styx\Styx\Styx.csproj">
-      <Project>{3949790d-8591-4101-9e4d-ce7a758e7409}</Project>
-      <Name>Styx</Name>
     </ProjectReference>
     <ProjectReference Include="..\SharpMapillary\SharpMapillary.csproj">
       <Project>{cb98a029-2837-49df-968f-c74cbdcc3edd}</Project>

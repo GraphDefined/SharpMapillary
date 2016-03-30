@@ -45,9 +45,9 @@ namespace org.GraphDefined.SharpMapillary
 
             #region Defaults...
 
-            var StartDirectory       = Environment.CurrentDirectory;
-            var ParallelReadOptions  = new ParallelOptions();
-            var ParallelWriteOptions = new ParallelOptions() { MaxDegreeOfParallelism = 8 };
+            var StartDirectory        = Environment.CurrentDirectory;
+            var ParallelReadOptions   = new ParallelOptions();
+            var ParallelWriteOptions  = new ParallelOptions() { MaxDegreeOfParallelism = 8 };
 
             #endregion
 
@@ -108,17 +108,18 @@ namespace org.GraphDefined.SharpMapillary
 
             SharpMapillary.Start(StartDirectory).
 
-                LoadGPXs(OnDupliateTimestamp: (GPXFile, Timestamp, lat, lng, alt) => Console.WriteLine("Duplicate GPS timestamp: " + Timestamp.ToUniversalTime().ToString("s") + "Z" + " in GPX file: " + GPXFile),
-                         OnResult: (Min, Max, Kind) => Console.WriteLine("Min/Max GPS timestamps: " + Min.ToLocalTime().ToString("s") + " / " + Max.ToLocalTime().ToString("s") + " - " + Kind.ToString()),
+                LoadGPXs(OnDupliateTimestamp: (GPXFile, Timestamp, lat, lng, alt) => { Console.WriteLine("Duplicate GPS timestamp: " + Timestamp.ToUniversalTime().ToString("s") + "Z" + " in GPX file: " + GPXFile); return Timestamp.Add(TimeSpan.FromMilliseconds(500)); },
+                         OnResult:            (Min, Max, Kind)                    => Console.WriteLine("Min/Max GPS timestamps: " + Min.ToLocalTime().ToString("s") + " / " + Max.ToLocalTime().ToString("s") + " - " + Kind.ToString()),
                          TimeOffset: 0).//-7200).//-14400).   // RunKeeper seems to have a timezone bug currently!
                 Do(v => Console.WriteLine("Number of GPS trackpoints: " +           v.NumberOfGPSPoints)).
                 Do(v => Console.WriteLine("Number of duplicate GPS timestamps: " +  v.NumberOfDuplicateGPSTimestamps)).
 
                 LoadJPEGs(OnProcessed:         (Sum, Processed, Percentage)       => { if (Processed % 25 == 0) { Console.Write(Percentage.ToString("0.00") + "% of " + Sum + " images loaded..."); Console.CursorLeft = 0; } },
-                          OnDupliateTimestamp: (JPEGFile, Timestamp)              => Console.WriteLine("Duplicate EXIF timestamp: " + Timestamp.ToUniversalTime().ToString("s") + "Z" + " in image file: " + JPEGFile),
+                          OnDupliateTimestamp: (JPEGFile, Timestamp)              => { Console.WriteLine("Duplicate EXIF timestamp: " + Timestamp.ToUniversalTime().ToString("s") + "Z" + " in image file: " + JPEGFile); return Timestamp.Add(TimeSpan.FromMilliseconds(500)); },
                           DateTimeType:        DateTimeKind.Local,     // GoPro Hero 3+ image EXIF use the local time zone
                           ParallelOptions:     new ParallelOptions() { MaxDegreeOfParallelism = 16 },
                           OnResult:            (Min, Max, Kind)                   => Console.WriteLine("Min/Max EXIF timestamps: " + Min.ToLocalTime().ToString("s") + " / " + Max.ToLocalTime().ToString("s") + " - " + Kind.ToString())).
+                          //TimeOffset: 74).   // Jena-C
                           //TimeOffset: 7200).
                           //TimeOffset: 52).   // Ziegenhain2:
                           //TimeOffset: 44).   // Jena-Ost3

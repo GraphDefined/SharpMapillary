@@ -45,7 +45,7 @@ namespace org.GraphDefined.SharpMapillary
                                                    DateTimeKind                              DateTimeType         = DateTimeKind.Utc,
                                                    Int32?                                    TimeOffset           = null,
                                                    Action<UInt32, UInt32, Double>            OnProcessed          = null,
-                                                   Action<String, DateTime>                  OnDupliateTimestamp  = null,
+                                                   Func<String, DateTime, DateTime>          OnDupliateTimestamp  = null,
                                                    ParallelOptions                           ParallelOptions      = null,
                                                    Action<DateTime, DateTime, DateTimeKind>  OnResult             = null)
 
@@ -62,7 +62,7 @@ namespace org.GraphDefined.SharpMapillary
                                                    DateTimeKind                              DateTimeType         = DateTimeKind.Utc,
                                                    Int32?                                    TimeOffset           = null,
                                                    Action<UInt32, UInt32, Double>            OnProcessed          = null,
-                                                   Action<String, DateTime>                  OnDupliateTimestamp  = null,
+                                                   Func<String, DateTime, DateTime>          OnDupliateTimestamp  = null,
                                                    ParallelOptions                           ParallelOptions      = null,
                                                    Action<DateTime, DateTime, DateTimeKind>  OnResult             = null)
 
@@ -80,9 +80,10 @@ namespace org.GraphDefined.SharpMapillary
                                                    DateTimeKind                              DateTimeType         = DateTimeKind.Utc,
                                                    Int32?                                    TimeOffset           = null,
                                                    Action<UInt32, UInt32, Double>            OnProcessed          = null,
-                                                   Action<String, DateTime>                  OnDupliateTimestamp  = null,
+                                                   Func<String, DateTime, DateTime>          OnDupliateTimestamp  = null,
                                                    ParallelOptions                           ParallelOptions      = null,
-                                                   Action<DateTime, DateTime, DateTimeKind>  OnResult             = null)
+                                                   Action<DateTime, DateTime, DateTimeKind>  OnResult             = null,
+                                                   Boolean                                   ParallelProcessing   = false)
 
         {
 
@@ -95,8 +96,8 @@ namespace org.GraphDefined.SharpMapillary
 
             #region Init...
 
-            var AllJPEGs                = Directory.EnumerateFiles(Path, "*.JPG", SearchOption).ToArray();
-            var NumberOfJPEGsFound      = (UInt32) AllJPEGs.Length;
+            var AllJPegs                = Directory.EnumerateFiles(Path, "*.JPG", SearchOption).OrderBy(a => a).ToArray();
+            var NumberOfJPEGsFound      = (UInt32) AllJPegs.Length;
             var NumberOfJPEGsProcessed  = 0;
             var OnProcessedLocal        = OnProcessed;
 
@@ -105,18 +106,40 @@ namespace org.GraphDefined.SharpMapillary
 
             #endregion
 
-            Parallel.ForEach(AllJPEGs,
-                             ParallelOptions != null ? ParallelOptions : new ParallelOptions() { MaxDegreeOfParallelism = 8 },
-                             JPEGFile => {
+            if (ParallelProcessing)
+            {
 
-                LoadJPEG(JPEGFile, ref MapillaryInfo, DateTimeType, TimeOffset, OnDupliateTimestamp);
-                Interlocked.Increment(ref NumberOfJPEGsProcessed);
+                Parallel.ForEach(AllJPegs,
+                                 ParallelOptions != null ? ParallelOptions : new ParallelOptions() { MaxDegreeOfParallelism = 1 },
+                                 JPegFile => {
 
-                OnProcessedLocal = OnProcessed;
-                if (OnProcessedLocal != null)
-                    OnProcessedLocal(NumberOfJPEGsFound, (UInt32) NumberOfJPEGsProcessed, (Double) NumberOfJPEGsProcessed / (Double) NumberOfJPEGsFound * 100);
+                                     LoadJPEG(JPegFile, ref MapillaryInfo, DateTimeType, TimeOffset, OnDupliateTimestamp);
+                                     Interlocked.Increment(ref NumberOfJPEGsProcessed);
 
-            });
+                                     OnProcessedLocal = OnProcessed;
+                                     if (OnProcessedLocal != null)
+                                         OnProcessedLocal(NumberOfJPEGsFound, (UInt32) NumberOfJPEGsProcessed, (Double) NumberOfJPEGsProcessed / (Double) NumberOfJPEGsFound * 100);
+
+                                 });
+
+            }
+
+            else
+            {
+
+                foreach (var JPegFile in AllJPegs)
+                {
+
+                    LoadJPEG(JPegFile, ref MapillaryInfo, DateTimeType, TimeOffset, OnDupliateTimestamp);
+                    Interlocked.Increment(ref NumberOfJPEGsProcessed);
+
+                    OnProcessedLocal = OnProcessed;
+                    if (OnProcessedLocal != null)
+                        OnProcessedLocal(NumberOfJPEGsFound, (UInt32) NumberOfJPEGsProcessed, (Double) NumberOfJPEGsProcessed / (Double) NumberOfJPEGsFound * 100);
+
+                }
+
+            }
 
             #region Process OnResult-delegate...
 
@@ -153,7 +176,7 @@ namespace org.GraphDefined.SharpMapillary
                                                                 DateTimeKind                              DateTimeType         = DateTimeKind.Utc,
                                                                 Int32?                                    TimeOffset           = null,
                                                                 Action<UInt32, UInt32, Double>            OnProcessed          = null,
-                                                                Action<String, DateTime>                  OnDupliateTimestamp  = null,
+                                                                Func<String, DateTime, DateTime>          OnDupliateTimestamp  = null,
                                                                 ParallelOptions                           ParallelOptions      = null,
                                                                 Action<DateTime, DateTime, DateTimeKind>  OnResult             = null)
 
@@ -170,7 +193,7 @@ namespace org.GraphDefined.SharpMapillary
                                                                 DateTimeKind                              DateTimeType         = DateTimeKind.Utc,
                                                                 Int32?                                    TimeOffset           = null,
                                                                 Action<UInt32, UInt32, Double>            OnProcessed          = null,
-                                                                Action<String, DateTime>                  OnDupliateTimestamp  = null,
+                                                                Func<String, DateTime, DateTime>          OnDupliateTimestamp  = null,
                                                                 ParallelOptions                           ParallelOptions      = null,
                                                                 Action<DateTime, DateTime, DateTimeKind>  OnResult             = null)
 
@@ -183,10 +206,10 @@ namespace org.GraphDefined.SharpMapillary
 
         #region LoadJPEG(this JPEGFile, DateTimeType = DateTimeKind.Utc, TimeOffset = null, OnDupliateTimestamp = null)
 
-        public static SharpMapillaryInfo LoadJPEG(this String               JPEGFile,
-                                                  DateTimeKind              DateTimeType         = DateTimeKind.Utc,
-                                                  Int32?                    TimeOffset           = null,
-                                                  Action<String, DateTime>  OnDupliateTimestamp  = null)
+        public static SharpMapillaryInfo LoadJPEG(this String                       JPEGFile,
+                                                  DateTimeKind                      DateTimeType         = DateTimeKind.Utc,
+                                                  Int32?                            TimeOffset           = null,
+                                                  Func<String, DateTime, DateTime>  OnDupliateTimestamp  = null)
 
         {
 
@@ -200,11 +223,11 @@ namespace org.GraphDefined.SharpMapillary
 
         #region LoadJPEG(this MapillaryInfo, JPEGFile, DateTimeType = DateTimeKind.Utc, TimeOffset = null, OnDupliateTimestamp = null)
 
-        public static SharpMapillaryInfo LoadJPEG(this SharpMapillaryInfo   MapillaryInfo,
-                                                  String                    JPEGFile,
-                                                  DateTimeKind              DateTimeType         = DateTimeKind.Utc,
-                                                  Int32?                    TimeOffset           = null,
-                                                  Action<String, DateTime>  OnDupliateTimestamp  = null)
+        public static SharpMapillaryInfo LoadJPEG(this SharpMapillaryInfo           MapillaryInfo,
+                                                  String                            JPEGFile,
+                                                  DateTimeKind                      DateTimeType         = DateTimeKind.Utc,
+                                                  Int32?                            TimeOffset           = null,
+                                                  Func<String, DateTime, DateTime>  OnDupliateTimestamp  = null)
 
         {
             return LoadJPEG(JPEGFile, ref MapillaryInfo, DateTimeType, TimeOffset, OnDupliateTimestamp);
@@ -214,11 +237,11 @@ namespace org.GraphDefined.SharpMapillary
 
         #region LoadJPEG(JPEGFile, ref MapillaryInfo, DateTimeType = DateTimeKind.Utc, TimeOffset = null, OnDupliateTimestamp = null)
 
-        public static SharpMapillaryInfo LoadJPEG(String                    JPEGFile,
-                                                  ref SharpMapillaryInfo    MapillaryInfo,
-                                                  DateTimeKind              DateTimeType         = DateTimeKind.Utc,
-                                                  Int32?                    TimeOffset           = null,
-                                                  Action<String, DateTime>  OnDupliateTimestamp  = null)
+        public static SharpMapillaryInfo LoadJPEG(String                            JPEGFile,
+                                                  ref SharpMapillaryInfo            MapillaryInfo,
+                                                  DateTimeKind                      DateTimeType         = DateTimeKind.Utc,
+                                                  Int32?                            TimeOffset           = null,
+                                                  Func<String, DateTime, DateTime>  OnDupliateTimestamp  = null)
 
         {
 
@@ -309,11 +332,11 @@ namespace org.GraphDefined.SharpMapillary
 
                     if (!MapillaryInfo.Images.TryGetValue(Timestamp, out MapillaryImage))
                         MapillaryInfo.Images.Add(Timestamp, new ImageEXIFInfo(JPEGFile,
-                                                                            Timestamp,
-                                                                            Latitude,
-                                                                            Longitude,
-                                                                            Altitude,
-                                                                            Direction));
+                                                                              Timestamp,
+                                                                              Latitude,
+                                                                              Longitude,
+                                                                              Altitude,
+                                                                              Direction));
 
                     else
                     {
@@ -333,7 +356,18 @@ namespace org.GraphDefined.SharpMapillary
                             MapillaryInfo.NumberOfDuplicateEXIFTimestamps++;
 
                             if (OnDupliateTimestamp != null)
-                                OnDupliateTimestamp(JPEGFile, Timestamp);
+                            {
+
+                                var FixedTimestamp = OnDupliateTimestamp(JPEGFile, Timestamp);
+
+                                MapillaryInfo.Images.Add(FixedTimestamp, new ImageEXIFInfo(JPEGFile,
+                                                                                           FixedTimestamp,
+                                                                                           Latitude,
+                                                                                           Longitude,
+                                                                                           Altitude,
+                                                                                           Direction));
+
+                            }
 
                         }
 

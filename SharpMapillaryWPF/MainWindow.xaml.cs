@@ -167,7 +167,7 @@ namespace org.GraphDefined.SharpMapillary.WPF
 
                 SharpMapillary.Start(SelectedFolderTextBox.Text).
 
-                    LoadGPXs(OnDupliateTimestamp: (GPXFile, Timestamp, lat, lng, alt) => Console.WriteLine("Duplicate GPS timestamp: " + Timestamp.ToUniversalTime().ToString("s") + "Z" + " in GPX file: " + GPXFile),
+                    LoadGPXs(OnDupliateTimestamp: (GPXFile, Timestamp, lat, lng, alt) => { Console.WriteLine("Duplicate GPS timestamp: " + Timestamp.ToUniversalTime().ToString("s") + "Z" + " in GPX file: " + GPXFile); return Timestamp.Add(TimeSpan.FromMilliseconds(500)); },
                              OnResult:            (Min, Max, Kind)                    => Console.WriteLine("Min/Max GPS timestamps: "  + Min.ToLocalTime().ToString("s") + " / " + Max.ToLocalTime().ToString("s") + " - " + Kind.ToString())).
 
                     Do(v => Console.WriteLine("Number of GPS trackpoints: " + v.NumberOfGPSPoints)).

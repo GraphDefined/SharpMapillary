@@ -64,11 +64,11 @@ namespace org.GraphDefined.SharpMapillary
                              Double     Direction)
         {
 
-            this.FileName   = FileName;
-            this.Timestamp  = Timestamp;
-            this.Latitude   = Latitude;
-            this.Longitude  = Longitude;
-            this.Altitude   = Altitude;
+            this.FileName          = FileName;
+            this.Timestamp         = Timestamp;
+            this.Latitude          = Latitude;
+            this.Longitude         = Longitude;
+            this.Altitude          = Altitude;
             this.ViewingDirection  = Direction;
 
         }

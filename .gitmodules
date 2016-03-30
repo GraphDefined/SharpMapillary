@@ -19,3 +19,6 @@
 [submodule "libs/Hermod"]
 	path = libs/Hermod
 	url = git@github.com:Vanaheimr/Hermod.git
+[submodule "libs/BouncyCastle"]
+	path = libs/BouncyCastle
+	url = git@github.com:Vanaheimr/BouncyCastle.git
